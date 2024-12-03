@@ -9,37 +9,6 @@ export class TileConfigurations {
         const mirrored = 'rotated4 reflect_x:-1 reflect_y:-1 start_end:1 mirror:1';
         this.data = [
             {
-                'name': 'Pentagons with 4-way rotation',
-                'symmetry': '4-way',
-                'shape type': 'pentagon 4-way',
-                'tesselation type': 'type_',
-                'sides': 5,
-                'angle': 0,
-                'point_special_settings': 3,
-                'line_relationships': {
-                    0: [
-                        [0, self],
-                        [1, translate]
-                    ],
-                    1: [
-                        [1, self],
-                        [0, translate]
-                    ],
-                    2: [
-                        [2, self],
-                        [2, rotated3]
-                    ],
-                    3: [
-                        [3, self],
-                        [4, translate]
-                    ],
-                    4: [
-                        [4, self],
-                        [3, translate]
-                    ]
-                }
-            },
-            {
                 'name': 'Parallelograms',
                 'symmetry': '1-way',
                 'shape type': 'regular',
@@ -1095,6 +1064,37 @@ export class TileConfigurations {
                     3: [
                         [3, self],
                         [0, translate]
+                    ]
+                }
+            },
+            {
+                'name': 'Pentagons with 4-way rotation',
+                'symmetry': '4-way',
+                'shape type': 'pentagon 4-way',
+                'tesselation type': 'type16',
+                'sides': 5,
+                'angle': 0,
+                'point_special_settings': 3,
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [1, translate]
+                    ],
+                    1: [
+                        [1, self],
+                        [0, translate]
+                    ],
+                    2: [
+                        [2, self],
+                        [2, rotated3]
+                    ],
+                    3: [
+                        [3, self],
+                        [4, translate]
+                    ],
+                    4: [
+                        [4, self],
+                        [3, translate]
                     ]
                 }
             },

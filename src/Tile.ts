@@ -478,18 +478,25 @@ export class Tile {
                 }
             }
             else if (this.point_special_settings === 3 ) {
-                if (selected_corner_index === 0) {
-                    this.corners[selected_corner_index].copy(this.corners[selected_corner_index].add(new Vector2(0, offset.y)));
-                    this.corners[1].copy(this.corners[1].add(new Vector2(-offset.y, 0)));
-                    this.corners[2].copy(this.corners[2].add(new Vector2(offset.y, 0)));
-                }
-                if (selected_corner_index === 1) {
-                    this.corners[1].copy(this.corners[1].add(new Vector2(offset.x, offset.x)));
-                    this.corners[2].copy(this.corners[2].add(new Vector2(-offset.x, offset.x)));
-                }
-                if (selected_corner_index === 2) {
-                    this.corners[2].copy(this.corners[2].add(new Vector2(offset.x, -offset.x)));
-                    this.corners[1].copy(this.corners[1].add(new Vector2(-offset.x, -offset.x)));
+                let numbers: number[] = [];
+                if (selected_corner_index === 0) numbers = [0, 1, 0, 2, 1, 4, 0, 3, 4];
+                if (selected_corner_index === 1) numbers = [1, 1, 0, 2, 1];
+                if (selected_corner_index === 2) numbers = [2, 2, 1, 0, 1, 4, 0, 3, 4];
+                if (selected_corner_index === 3) numbers = [3, 4, 3, 0, 4, 0, 1, 2, 1];
+                if (selected_corner_index === 4) numbers = [4, 0, 4, 3, 4];
+
+                const [a, b, c, d, e, f, g, h, i] = numbers;
+
+                this.corners[a].copy(mouse_pos);
+
+                const magnitude_1: Vector2 = this.corners[b].subtract(this.corners[c]);
+                const magnitude_rotated_1: Vector2 = magnitude_1.rotate(0.5 * Math.PI);
+                this.corners[d].copy(this.corners[e].add(magnitude_rotated_1));
+
+                if (f !== undefined) {
+                    const magnitude_2: Vector2 = this.corners[f].subtract(this.corners[g]);
+                    const magnitude_rotated_2: Vector2 = magnitude_2.rotate(1.5 * Math.PI);
+                    this.corners[h].copy(this.corners[i].add(magnitude_rotated_2));
                 }
             }
             else {
@@ -611,6 +618,15 @@ export class Tile {
         }
 
         return new_polygon;
+    }
+
+    translate_polygon(polygon: Array<Vector2>, offset: Vector2): Array<Vector2> {
+        const translated_polygon: Array<Vector2> = [];
+        for (let i = 0; i < polygon.length; i++) {
+            translated_polygon.push(polygon[i].add(offset));
+        }
+
+        return translated_polygon;
     }
 
     get_center() {
@@ -994,11 +1010,9 @@ export class Tile {
             for (let i = -offset; i < offset; i++) {
                 for (let j = -offset; j < offset; j++) {
                     const scale: Vector2 = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
-                    let translated_polygons: Array<Array<Vector2>> = [[], [], [], []];
-                    for (let k = 0; k < polygon.length; k++) {
-                        for (let a = 0; a < polygons.length; a++) {
-                            translated_polygons[a].push(polygons[a][k].add(scale));
-                        }
+                    let translated_polygons: Array<Array<Vector2>> = [];
+                    for (let k = 0; k < polygons.length; k++) {
+                        translated_polygons.push(this.translate_polygon(polygons[k], scale));
                     }
                     for (let a = 0; a < translated_polygons.length; a++) {
                         let color: string = color_1
@@ -1007,6 +1021,31 @@ export class Tile {
                         }
                         canvas_handler.draw_polygon(color, translated_polygons[a]);
                     }
+                }
+            }
+        }
+        else if (this.tesselation_type === 'type16') {
+            let horizontal_vector: Vector2 = this.corners[1].subtract(this.corners[4]).add(this.corners[2].subtract(this.corners[1]).rotate(1.5 * Math.PI)).add(this.corners[3].subtract(this.corners[4]).rotate(1.5 * Math.PI));
+            let vertical_vector: Vector2 = this.corners[1].subtract(this.corners[0]).add(this.corners[2].subtract(this.corners[1]).rotate(1.5 * Math.PI)).add(this.corners[2].subtract(this.corners[3]).rotate(0.5 * Math.PI));
+
+            const polygons: Array<Array<Vector2>> = [
+                this.rotate_polygon(polygon, new Vector2(0, 0), Math.PI * (0 / 2), 0),
+                this.rotate_polygon(polygon, this.corners[3].subtract(this.corners[0]), Math.PI * (1 / 2), 0),
+                this.rotate_polygon(polygon, this.corners[3].subtract(this.corners[0]).multiply(2).add(this.corners[2]).subtract(this.corners[3]), Math.PI * (2 / 2), 0),
+                this.rotate_polygon(polygon, this.corners[2].subtract(this.corners[0]), Math.PI * (3 / 2), 0)
+            ];
+
+            for (let i = -offset; i < offset; i++) {
+                for (let j = -offset; j < offset; j++) {
+                    const scale: Vector2 = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
+                    let translated_polygons: Array<Array<Vector2>> = [];
+                    for (let k = 0; k < polygons.length; k++) {
+                        translated_polygons.push(this.translate_polygon(polygons[k], scale));
+                    }
+                    canvas_handler.draw_polygon(colors[(((0 + i) % 3) + 3) % 3], translated_polygons[0]);
+                    canvas_handler.draw_polygon(colors[(((1 + i) % 3) + 3) % 3], translated_polygons[1]);
+                    canvas_handler.draw_polygon(colors[(((2 + i) % 3) + 3) % 3], translated_polygons[2]);
+                    canvas_handler.draw_polygon(colors[(((1 + i) % 3) + 3) % 3], translated_polygons[3]);
                 }
             }
         }
