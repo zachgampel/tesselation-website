@@ -38,12 +38,11 @@ class Game {
             // 'option': null,
             // 'isCornerSelected': null
         };
-        const options = new TileConfigurations().getShapeNames();
         this.debug = new Debug('debug', debug_settings, true);
-        this.input = new Input('tesselationSelection', options);
-        this.tiles = {};
-        for (let tile_option of options) {
-            this.tiles[tile_option] = new Tile(tile_option);
+        this.input = new Input('tesselationSelection');
+        this.tiles = [];
+        for (let i = 0; i < new TileConfigurations().data.length; i++) {
+            this.tiles.push(new Tile(i));
         }
         this.tile = this.tiles[this.input.current_selection];
     }

@@ -6,41 +6,29 @@ import { TileConfigurations } from './ShapeConfiguration.js';
 export class Tile {
     lines: Array<Line> = [];
     corners: Array<Vector2> = [];
-    tile_type: string;
 
     configurations: TileConfigurations = new TileConfigurations();
 
-    selected_new_point: Vector2 | null;
-    selected_section_index: number | null;
-    selected_line_index: number | null;
-    selected_existing_point_index: number | null;
+    selected_new_point: Vector2 | null = null;
+    selected_section_index: number | null = null;
+    selected_line_index: number | null = null;
+    selected_existing_point_index: number | null = null;
     point_relationships: any;
     point_special_settings: any;
-    tesselation_pattern: string | null;
+    tesselation_pattern: string | null = null;
     tesselation_type: string | null = null;
     line_relationships: any = {};    
 
-    constructor(tile_type: string) {
-        this.tile_type = tile_type;
-        this.tesselation_pattern = null;
-        const config = this.configurations.getConfig(this.tile_type);
-        if (config !== null) {
-            this.create_corners(config['shape type'], config['sides'], config['angle']);
-            this.tesselation_pattern = config['symmetry'];
-            this.point_relationships = config['point_relationships'];
-            this.point_special_settings = config['point_special_settings'];
-            this.line_relationships = config['line_relationships'];
-            this.tesselation_type = config['tesselation type'];
-            this.create_lines();
-        }
-        else {
-            console.error(`Failed to retrieve value ${this.tile_type} from configurations.`)
-        }
-        
-        this.selected_new_point = null;
-        this.selected_section_index = null;
-        this.selected_line_index = null;
-        this.selected_existing_point_index = null;
+    constructor(config_index: number) {
+        const config = this.configurations.getConfig(config_index);
+
+        this.create_corners(config['shape type'], config['sides'], config['angle']);
+        this.tesselation_pattern = config['symmetry'];
+        this.point_relationships = config['point_relationships'];
+        this.point_special_settings = config['point_special_settings'];
+        this.line_relationships = config['line_relationships'];
+        this.tesselation_type = config['tesselation type'];
+        this.create_lines();
     }
 
     create_corners(shape_type: string, corner_count: number, angle: number) {
@@ -566,61 +554,38 @@ export class Tile {
         return polygon_points;
 	}
 
-    transform_polygon(polygon: Array<Vector2>, offset: Vector2, flip_x: boolean, flip_y: boolean): Array<Vector2> {
+    flip_polygon_x(polygon: Array<Vector2>, center: Vector2) {
         const new_polygon: Array<Vector2> = [];
-
-        let center: Vector2 = new Vector2(0, 0);
-        for (const corner of this.corners) {
-            center = center.add(corner);
-        }
-        center = center.multiply(1 / this.corners.length);
-
         for (const point of polygon) {
             let new_point: Vector2 = new Vector2(point.x, point.y);
-            if (flip_x) {
-                if (new_point.x < center.x)  {
-                    new_point.x = new_point.x + (2 * (center.x - new_point.x));
-                }
-                else {
-                    new_point.x = new_point.x - (2 * (new_point.x - center.x));
-                }
+            if (new_point.y < center.y)  {
+                new_point.y = new_point.y + (2 * (center.y - new_point.y));
             }
-            if (flip_y) {
-                if (new_point.y < center.y)  {
-                    new_point.y = new_point.y + (2 * (center.y - new_point.y));
-                }
-                else {
-                    new_point.y = new_point.y - (2 * (new_point.y - center.y));
-                }
+            else {
+                new_point.y = new_point.y - (2 * (new_point.y - center.y));
             }
-            new_point = new_point.add(offset);
             new_polygon.push(new_point);
         }
 
         return new_polygon;
     }
 
-    rotate_polygon(polygon: Array<Vector2>, offset: Vector2, angle: number = Math.PI, corner_index: number | null = null): Array<Vector2> {
-        let center: Vector2 = new Vector2(0, 0);
-        if (corner_index === null) {
-            for (const corner of this.corners) {
-                center = center.add(corner);
-            }
-            center = center.multiply(1 / this.corners.length);
+    rotate_polygon(polygon: Array<Vector2>, angle: number | undefined, center: Vector2): Array<Vector2> {
+        if (angle === undefined || Math.abs(angle) % (2 * Math.PI) === 0) {
+            return polygon;
         }
-        else {
-            center = this.corners[corner_index];
-        }
-
         const new_polygon: Array<Vector2> = [];
         for (const point of polygon) {
-            new_polygon.push(point.subtract(center).rotate(angle).add(center).add(offset));
+            new_polygon.push(point.subtract(center).rotate(angle).add(center));
         }
 
         return new_polygon;
     }
 
-    translate_polygon(polygon: Array<Vector2>, offset: Vector2): Array<Vector2> {
+    translate_polygon(polygon: Array<Vector2>, offset: Vector2 | undefined): Array<Vector2> {
+        if (offset === undefined || (offset.x === 0 && offset.y === 0)) {
+            return polygon;
+        }
         const translated_polygon: Array<Vector2> = [];
         for (let i = 0; i < polygon.length; i++) {
             translated_polygon.push(polygon[i].add(offset));
@@ -638,414 +603,230 @@ export class Tile {
     }
 
     draw_tesselation(canvas_handler: CanvasHandler, offset: number, colors: Array<string>) {
-        const [color_1, color_2, _] = colors;
-        const polygon: Array<Vector2> = this.create_polygon();
-        
-        if (this.tesselation_type === 'type1') {
-            let horizontal_vector = this.corners[1].subtract(this.corners[0]);
-            let vertical_vector = this.corners[2].subtract(this.corners[1]);
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    let new_polygon = [];
-                    for (const point of polygon) {
-                        const vertical_scale = vertical_vector.multiply(i);
-                        const horizontal_scale = horizontal_vector.multiply(j);
-                        const new_point = point.add(vertical_scale).add(horizontal_scale);
-                        new_polygon.push(new_point)
-                    }
-                    const color = (i + j) % 2 ? color_1 : color_2
-                    canvas_handler.draw_polygon(color, new_polygon);
-                }
+        if (this.tesselation_type !== null) {
+            let horizontal_vector: Vector2 = new Vector2(0, 0);
+            let vertical_vector: Vector2 = new Vector2(0, 0);
+            let rotate_flip_center: Vector2 = new Vector2(0, 0)
+            let rotation_angles: Array<number | undefined> = [];
+            let flip_x: Array<boolean> = [];
+            let polygons_count = 0;
+            let translations: Array<Vector2 | undefined> = [];
+            let color_function: Function = () => 0;
+
+            if (this.tesselation_type === 'type1') {
+                polygons_count = 1;
+                horizontal_vector = this.corners[1].subtract(this.corners[0]);
+                vertical_vector = this.corners[2].subtract(this.corners[1]);
+                color_function = (i: number, j: number, k: number) => (((i + j) % 2) + 2) % 2;
             }
-        }
-        else if (this.tesselation_type === 'type2') {
-            const vertical_vector: Vector2 = this.corners[1].subtract(this.corners[4]).add(this.corners[0]).subtract(this.corners[5]);
-            const horizontal_vector:Vector2 = this.corners[0].subtract(this.corners[3]).add(this.corners[1]).subtract(this.corners[2]);
+            else if (this.tesselation_type === 'type2') {
+                polygons_count = 3;
+                horizontal_vector = this.corners[0].subtract(this.corners[3]).add(this.corners[5]).subtract(this.corners[4]);
+                vertical_vector = this.corners[2].subtract(this.corners[4]).add(this.corners[0]).subtract(this.corners[4]);
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[0].subtract(this.corners[2]),
+                    this.corners[0].subtract(this.corners[4]),
+                ];
+                color_function = (i: number, j: number, k: number) => (k);
+            }
+            else if (this.tesselation_type === 'type3') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[1].subtract(this.corners[0]).multiply(2);
+                vertical_vector = this.corners[2].subtract(this.corners[1]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[3].subtract(this.corners[0]),
+                ];
+                color_function = (i: number, j: number, k: number) => ((((j + k) % 2) + 2) % 2);
+            }
+            else if (this.tesselation_type === 'type4') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[0].subtract(this.corners[1]).add(this.corners[0]).subtract(this.corners[2]);
+                vertical_vector = this.corners[0].subtract(this.corners[2]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[2].subtract(this.corners[0]),
+                ];
+                color_function = (i: number, j: number, k: number) => (k);
+            }
+            else if (this.tesselation_type === 'type5') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[1].subtract(this.corners[2]);
+                vertical_vector = this.corners[1].subtract(this.corners[0]).multiply(2).add(this.corners[3]).subtract(this.corners[4]);
+                rotate_flip_center = this.corners[1];
+                rotation_angles = [0, Math.PI];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[2].subtract(this.corners[1])
+                ];
+                color_function = (i: number, j: number, k: number) => ((((i + j*2 + k) % 3) + 3) % 3);
+            }
+            else if (this.tesselation_type === 'type6') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[0].subtract(this.corners[1]).add(this.corners[3]).subtract(this.corners[2]);
+                vertical_vector = this.corners[0].subtract(this.corners[2]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[3].subtract(this.corners[0])
+                ];
+                color_function = (i: number, j: number, k: number) => (k);
+            }
+            else if (this.tesselation_type === 'type7') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[0].subtract(this.corners[3]).add(this.corners[5]).subtract(this.corners[4]);
+                vertical_vector = this.corners[2].subtract(this.corners[4]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[5].subtract(this.corners[0]),
+                ];
+                color_function = (i: number, j: number, k: number) => ((((j + k) % 3) + 3) % 3);
+            }
+            else if (this.tesselation_type === 'type8') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[1].subtract(this.corners[0]);
+                vertical_vector = new Vector2(0, 2 * (this.corners[2].y - this.corners[1].y));
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI];
+                flip_x = [false, true];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[2].subtract(this.corners[0])
+                ];
+                color_function = (i: number, j: number, k: number) => ((((i + k) % 2) + 2) % 2);
+            }
+            else if (this.tesselation_type === 'type9') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[2].subtract(this.corners[0]);
+                vertical_vector = this.corners[1].subtract(this.corners[3]);
+                rotate_flip_center = this.corners[1];
+                rotation_angles = [0, 0];
+                flip_x = [false, true];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[0].subtract(this.corners[1])
+                ];
+                color_function = (i: number, j: number, k: number) => (k);
+            }
+            else if (this.tesselation_type === 'type10') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[2].subtract(this.corners[0]);
+                vertical_vector = this.corners[4].subtract(this.corners[1]).add(new Vector2(-(this.corners[3].x - this.corners[2].x), this.corners[3].y - this.corners[2].y));
+                rotate_flip_center = this.corners[1];
+                rotation_angles = [0, Math.PI];
+                flip_x = [false, true];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[5].subtract(this.corners[1])
+                ];
+                color_function = (i: number, j: number, k: number) => ((((i + k) % 3) + 3) % 3);
+            }
+            else if (this.tesselation_type === 'type11') {
+                polygons_count = 2;
+                horizontal_vector = this.corners[3].subtract(this.corners[0]).add(new Vector2(this.corners[2].x - this.corners[1].x, -(this.corners[2].y - this.corners[1].y)));
+                vertical_vector = this.corners[4].subtract(this.corners[2]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI];
+                flip_x = [false, true];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[5].subtract(this.corners[0])
+                ];
+                color_function = (i: number, j: number, k: number) => ((((j*2 + k) % 3) + 3) % 3);
+            }
+            else if (this.tesselation_type === 'type12') {
+                polygons_count = 3;
+                horizontal_vector = this.corners[2].subtract(this.corners[0]);
+                vertical_vector = this.corners[3].subtract(this.corners[0]).add(this.corners[3]).subtract(this.corners[1]);
+                rotate_flip_center = this.corners[1];
+                rotation_angles = [0, 2 / 3 * Math.PI, 4 / 3 * Math.PI];
+
+                color_function = (i: number, j: number, k: number) => (k);
+            }
+            else if (this.tesselation_type === 'type13') {
+                polygons_count = 3;
+                horizontal_vector = this.corners[3].subtract(this.corners[0]).add(this.corners[0].subtract(this.corners[5]).rotate(2 / 3 * Math.PI));
+                vertical_vector = this.corners[4].subtract(this.corners[1]).add(this.corners[5].subtract(this.corners[4]).rotate(4 / 3 * Math.PI));
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 2 / 3 * Math.PI, 4 / 3 * Math.PI];
+
+                color_function = (i: number, j: number, k: number) => (k);
+            }
+            else if (this.tesselation_type === 'type14') {
+                polygons_count = 4;
+                horizontal_vector = this.corners[2].subtract(this.corners[1]);
+                vertical_vector = new Vector2(0, 2 * (this.corners[1].y - this.corners[0].y));
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 0.5 * Math.PI, Math.PI, 1.5 * Math.PI];
+                
+                color_function = (i: number, j: number, k: number) => ((((i + j + k) % 2) + 2) % 2);
+            }
+            else if (this.tesselation_type === 'type15') {
+                polygons_count = 4;
+                horizontal_vector = this.corners[1].subtract(this.corners[0]).multiply(2);
+                vertical_vector = this.corners[3].subtract(this.corners[0]).multiply(2);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 0.5 * Math.PI, Math.PI, 1.5 * Math.PI];
+                
+                color_function = (i: number, j: number, k: number) => (k % 2);
+            }
+            else if (this.tesselation_type === 'type16') {
+                polygons_count = 4;
+                horizontal_vector = this.corners[1].subtract(this.corners[4]).add(this.corners[2].subtract(this.corners[1]).rotate(1.5 * Math.PI)).add(this.corners[3].subtract(this.corners[4]).rotate(1.5 * Math.PI));
+                vertical_vector = this.corners[1].subtract(this.corners[0]).add(this.corners[2].subtract(this.corners[1]).rotate(1.5 * Math.PI)).add(this.corners[2].subtract(this.corners[3]).rotate(0.5 * Math.PI));
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 0.5 * Math.PI, Math.PI, 1.5 * Math.PI];
+                
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[3].subtract(this.corners[0]),
+                    this.corners[3].subtract(this.corners[0]).multiply(2).add(this.corners[2]).subtract(this.corners[3]),
+                    this.corners[2].subtract(this.corners[0])
+                ]
+
+                color_function = (i: number, j: number, k: number) => {
+                    if (k === 0) return (((0 + i) % 3) + 3) % 3;
+                    if (k === 1 || k === 3) return (((1 + i) % 3) + 3) % 3;
+                    if (k === 2) return (((2 + i) % 3) + 3) % 3;
+                };
+            }
+
+            const polygon: Array<Vector2> = this.create_polygon();
+            const polygons: Array<Array<Vector2>> = [];
+            for (let i = 0; i < polygons_count; i++) {
+                const rotated = this.rotate_polygon(polygon, rotation_angles[i], rotate_flip_center);
+                let flipped = rotated;
+                if (flip_x[i]) {
+                    flipped = this.flip_polygon_x(rotated, rotate_flip_center);
+                }
+                const rotated_translated = this.translate_polygon(flipped, translations[i]);
+                polygons.push(rotated_translated);
+            }
             
-            const offset_vectors: Array<Vector2> = [];
-            offset_vectors.push(new Vector2(0, 0));
-            offset_vectors.push(this.corners[0].subtract(this.corners[4]));
-            offset_vectors.push(this.corners[2].subtract(this.corners[4]))
-            
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    for (let k = 0; k < offset_vectors.length; k++) {
-                        let new_polygon = [];
-                        for (const point of polygon) {
-                            const vertical_scale = vertical_vector.multiply(i);
-                            const horizontal_scale = horizontal_vector.multiply(j);
-                            const new_point = point.add(vertical_scale).add(horizontal_scale).add(offset_vectors[k]);
-                            new_polygon.push(new_point)
-                        }
-                        canvas_handler.draw_polygon(colors[k], new_polygon);
-                    }
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type3') {
-            let horizontal_vector = this.corners[1].subtract(this.corners[0]);
-            let vertical_vector = this.corners[2].subtract(this.corners[1]);
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const vertical_scale: Vector2 = vertical_vector.multiply(i);
-                    const horizontal_scale: Vector2 = horizontal_vector.multiply(j);
-                    let new_polygon: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(vertical_scale).add(horizontal_scale));
-                    }
-                    const color = (i + j) % 2 ? color_1 : color_2
-                    if (j % 2 === 0) {
-                        canvas_handler.draw_polygon(color, new_polygon);
-                    }
-                    else {
-                        new_polygon = this.transform_polygon(new_polygon, new Vector2(0, 0), true, true);
-                        canvas_handler.draw_polygon(color, new_polygon);
-                    }
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type4') {
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), true, true)[0];
-            const flipped_offset: Vector2 = this.corners[this.corners.length - 1].subtract(flipped_point);
-            const flipped_polygon: Array<Vector2> = this.transform_polygon(polygon, flipped_offset, true, true);
-
-            let horizontal_vector = this.corners[0].subtract(this.corners[1]);
-            let vertical_vector = this.corners[1].subtract(this.corners[2]);
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const vertical_scale = vertical_vector.multiply(i);
-                    const horizontal_scale = horizontal_vector.multiply(j);
-
-                    let new_polygon: Array<Vector2> = [];
-                    let new_flipped: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(vertical_scale).add(horizontal_scale))
-                        new_flipped.push(flipped_polygon[k].add(vertical_scale).add(horizontal_scale))
-                    }
-                    canvas_handler.draw_polygon(color_1, new_polygon);
-                    canvas_handler.draw_polygon(color_2, new_flipped);
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type5') {
-            let horizontal_vector = this.corners[1].subtract(this.corners[2]);
-            let vertical_vector = this.corners[3].subtract(this.corners[2]).multiply(2).add(this.corners[4].subtract(this.corners[0]));
-            
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), true, true)[0];
-            const flipped_offset: Vector2 = this.corners[this.corners.length - 1].subtract(flipped_point);
-            const flipped_polygon: Array<Vector2> = this.transform_polygon(polygon, flipped_offset, true, true);
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const vertical_scale: Vector2 = vertical_vector.multiply(i);
-                    const horizontal_scale: Vector2 = horizontal_vector.multiply(j);
-                    let new_polygon: Array<Vector2> = [];
-                    let new_flipped: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(vertical_scale).add(horizontal_scale));
-                        new_flipped.push(flipped_polygon[k].add(vertical_scale).add(horizontal_scale))
-                    }
-                    const index = (((2*i - 2*j) % 3) + 3) % 3;
-                    canvas_handler.draw_polygon(colors[index], new_polygon);
-                    canvas_handler.draw_polygon(colors[(2 +index) % 3], new_flipped);
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type6') {
-            let diagonal_vector_1: Vector2 = this.corners[0].subtract(this.corners[2]);
-            let diagonal_vector_2: Vector2 = this.corners[1].subtract(this.corners[3]);
-
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), true, true)[0];
-            const flipped_offset: Vector2 = this.corners[this.corners.length - 1].subtract(flipped_point);
-            const rotated_polygon = this.rotate_polygon(polygon, flipped_offset, Math.PI, null);
-            for (let i = -offset; i < offset; i++) {
-                const diagonal_scale: Vector2 = diagonal_vector_1.multiply(i);
-                for (let j = -offset; j < offset; j++) {
-                    const diagonal_scale_2: Vector2 = diagonal_vector_2.multiply(j);
-
-                    let new_polygon: Array<Vector2> = [];
-                    let new_flipped: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(diagonal_scale).add(diagonal_scale_2));
-                        new_flipped.push(rotated_polygon[k].add(diagonal_scale).add(diagonal_scale_2));
-                    }
-                    canvas_handler.draw_polygon(color_1, new_polygon);
-                    canvas_handler.draw_polygon(color_2, new_flipped);
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type7') {
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), true, true)[0];
-            const flipped_offset: Vector2 = this.corners[this.corners.length - 1].subtract(flipped_point);
-            const rotated_polygon: Vector2[] = this.rotate_polygon(polygon, flipped_offset, Math.PI, null);
-
-            let horizontal_vector: Vector2 = this.corners[0].subtract(this.corners[3]).add(this.corners[1]).subtract(this.corners[2]);
-            let vertical_vector: Vector2 = this.corners[1].subtract(this.corners[5]);
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const new_polygon: Vector2[] = [];
-                    let new_flipped: Array<Vector2> = [];
-
-                    let horizontal_scale: Vector2 = horizontal_vector.multiply(i);
-                    let vertical_scale: Vector2 = vertical_vector.multiply(j);
-
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(horizontal_scale).add(vertical_scale));
-                        new_flipped.push(rotated_polygon[k].add(horizontal_scale).add(vertical_scale));
-                    }
-                    
-                    let index = ((j % 3) + 3) % 3;
-                    canvas_handler.draw_polygon(colors[index], new_polygon);
-                    canvas_handler.draw_polygon(colors[(index + 1) % 3], new_flipped);
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type8') {
-            let horizontal_vector = this.corners[1].subtract(this.corners[0]);
-            let vertical_vector = this.corners[2].subtract(this.corners[1]);
-
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), true, false)[0];
-            const flipped_offset: Vector2 = this.corners[1].subtract(flipped_point);
-            const flipped_polygon: Array<Vector2> = this.transform_polygon(polygon, flipped_offset.add(vertical_vector), true, false);
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const vertical_scale: Vector2 = new Vector2(0 * vertical_vector.x, 2 * i * vertical_vector.y);
-                    const horizontal_scale: Vector2 = horizontal_vector.multiply(j);
-                    let new_polygon: Array<Vector2> = [];
-                    let new_flipped_polygon: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(vertical_scale).add(horizontal_scale));
-                        new_flipped_polygon.push(flipped_polygon[k].add(vertical_scale).add(horizontal_scale));
-                    }
-                    let [c1, c2] = (j % 2) ? [color_1, color_2] : [color_2, color_1];
-                    canvas_handler.draw_polygon(c1, new_polygon);
-                    canvas_handler.draw_polygon(c2, new_flipped_polygon);
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type9') {
-            let horizontal_vector = this.corners[2].subtract(this.corners[0]);
-            let vertical_vector = this.corners[3].subtract(this.corners[1]);
-
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), false, true)[0];
-            const flipped_offset: Vector2 = this.corners[1].subtract(flipped_point);
-            const flipped_polygon: Array<Vector2> = this.transform_polygon(polygon, flipped_offset, false, true);
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const vertical_scale: Vector2 = vertical_vector.multiply(i);
-                    const horizontal_scale: Vector2 = horizontal_vector.multiply(j);
-                    let new_polygon: Array<Vector2> = [];
-                    let new_flipped_polygon: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(vertical_scale).add(horizontal_scale));
-                        new_flipped_polygon.push(flipped_polygon[k].add(vertical_scale).add(horizontal_scale));
-                    }
-                    canvas_handler.draw_polygon(color_1, new_polygon);
-                    canvas_handler.draw_polygon(color_2, new_flipped_polygon);
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type10') {
-            let horizontal_vector = this.corners[2].subtract(this.corners[0]);
-            let vertical_vector = this.corners[3].subtract(this.corners[1]);
-
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), true, false)[0];
-            const flipped_offset: Vector2 = this.corners[3].subtract(flipped_point).add(this.corners[4]).subtract(this.corners[3]);
-            const flipped_polygon: Array<Vector2> = this.transform_polygon(polygon, flipped_offset, true, false);
-
-            // let center_1 = this.get_center();
-            // let center_2 = center_1.add(flipped_offset);
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const vertical_scale: Vector2 = new Vector2(0 * vertical_vector.x, 2 * i * vertical_vector.y);
-                    const horizontal_scale: Vector2 = horizontal_vector.multiply(j);
-                    let new_polygon: Array<Vector2> = [];
-                    let new_flipped_polygon: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(vertical_scale).add(horizontal_scale));
-                        new_flipped_polygon.push(flipped_polygon[k].add(vertical_scale).add(horizontal_scale));
-                    }
-
-                    const curr_index = (((j % 3) + 3) % 3);
-                    canvas_handler.draw_polygon(colors[curr_index], new_polygon);
-                    canvas_handler.draw_polygon(colors[(curr_index + 1) % 3], new_flipped_polygon);
-
-                    // let curr_center_1 = center_1.add(vertical_scale).add(horizontal_scale);
-                    // canvas_handler.draw_text(`(${i},${j}) ${curr_index}`, curr_center_1.x, curr_center_1.y);
-                    // let curr_center_2 = center_2.add(vertical_scale).add(horizontal_scale);
-                    // canvas_handler.draw_text(`(${i},${j}) ${curr_index}`, curr_center_2.x, curr_center_2.y);
-                }
-            }
-            // canvas_handler.draw_aalines('black', flipped_polygon);
-        }
-        else if (this.tesselation_type === 'type11') {
-            let horizontal_vector = this.corners[0].subtract(this.corners[3]).add(this.corners[5]).subtract(this.corners[4]);
-            let vertical_vector = this.corners[4].subtract(this.corners[2]);
-
-            const flipped_point: Vector2 = this.transform_polygon([this.corners[0]], new Vector2(0, 0), true, false)[0];
-            const flipped_offset: Vector2 = this.corners[1].subtract(flipped_point);
-            const flipped_polygon: Array<Vector2> = this.transform_polygon(polygon, flipped_offset, true, false);
-
-            // canvas_handler.draw_polygon(color_1, polygon);
-            // canvas_handler.draw_polygon(color_2, flipped_polygon);
-
-            let center_1 = this.get_center();
-            let center_2 = center_1.add(flipped_offset);
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const scale: Vector2 = new Vector2(j * horizontal_vector.x, i * vertical_vector.y);
-                    let new_polygon: Array<Vector2> = [];
-                    let new_flipped_polygon: Array<Vector2> = [];
-                    for (let k = 0; k < polygon.length; k++) {
-                        new_polygon.push(polygon[k].add(scale));
-                        new_flipped_polygon.push(flipped_polygon[k].add(scale));
-                    }
-
-                    const curr_index = (((i % 3) + 3) % 3);
-                    canvas_handler.draw_polygon(colors[curr_index], new_polygon);
-                    // canvas_handler.draw_aalines('black', new_polygon);
-                    canvas_handler.draw_polygon(colors[(curr_index + 1) % 3], new_flipped_polygon);
-                    // canvas_handler.draw_aalines('black', new_flipped_polygon);
-
-                    // let curr_center_1 = center_1.add(scale);
-                    // canvas_handler.draw_text(`(${i},${j}) ${curr_index}`, curr_center_1.x, curr_center_1.y);
-                    // let curr_center_2 = center_2.add(scale);
-                    // canvas_handler.draw_text(`(${i},${j}) ${curr_index}`, curr_center_2.x, curr_center_2.y);
-                }
-            }
-            // canvas_handler.draw_aalines('black', flipped_polygon);
-        }
-        else if (this.tesselation_type === 'type12') {
-            let horizontal_vector: Vector2 = this.corners[0].subtract(this.corners[2]);
-            let vertical_vector: Vector2 = this.corners[0].subtract(this.corners[3]).add(this.corners[1]).subtract(this.corners[3]);
-
-            const polygons: Array<Array<Vector2>> = [];
-            polygons.push(polygon);
-            polygons.push(this.rotate_polygon(polygon, new Vector2(0, 0), 2 * Math.PI / 3, 1));
-            polygons.push(this.rotate_polygon(polygon, new Vector2(0, 0), 4 * Math.PI / 3, 1));
-
             for (let i = -offset; i < offset; i++) {
                 for (let j = -offset; j < offset; j++) {
                     const scale: Vector2 = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
-                    let translated_polygons: Array<Array<Vector2>> = [[], [], []];
-                    for (let k = 0; k < polygon.length; k++) {
-                        for (let a = 0; a < polygons.length; a++) {
-                            translated_polygons[a].push(polygons[a][k].add(scale));
-                        }
-                    }
-                    for (let a = 0; a < polygons.length; a++) {
-                        canvas_handler.draw_polygon(colors[a], translated_polygons[a]);
-                    }
-
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type13') {
-            let horizontal_vector: Vector2 = this.corners[0].subtract(this.corners[3]).add(this.corners[0].subtract(this.corners[1]).rotate(1 / 3 * Math.PI));
-            let vertical_vector: Vector2 = this.corners[1].subtract(this.corners[4]).add(this.corners[4].subtract(this.corners[3]).rotate(2 / 3 * Math.PI));
-
-            const polygons: Array<Array<Vector2>> = [];
-            polygons.push(polygon);
-            polygons.push(this.rotate_polygon(polygon, new Vector2(0, 0), 2 * Math.PI / 3, 0));
-            polygons.push(this.rotate_polygon(polygon, new Vector2(0, 0), 4 * Math.PI / 3, 0));
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const scale: Vector2 = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
-                    let translated_polygons: Array<Array<Vector2>> = [[], [], []];
-                    for (let k = 0; k < polygon.length; k++) {
-                        for (let a = 0; a < polygons.length; a++) {
-                            translated_polygons[a].push(polygons[a][k].add(scale));
-                        }
-                    }
-                    for (let a = 0; a < polygons.length; a++) {
-                        canvas_handler.draw_polygon(colors[a], translated_polygons[a]);
-                    }
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type14') {
-            let horizontal_vector: Vector2 = this.corners[1].subtract(this.corners[2]);
-            let vertical_vector: Vector2 = new Vector2(0, 2 * (this.corners[1].y - this.corners[0].y));
-
-            const polygons: Array<Array<Vector2>> = [];
-            for (let i = 0; i < 4; i++) {
-                polygons.push(this.rotate_polygon(polygon, new Vector2(0, 0), Math.PI * (i / 2), 0));
-            }
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const scale: Vector2 = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
-                    let translated_polygons: Array<Array<Vector2>> = [[], [], [], []];
-                    for (let k = 0; k < polygon.length; k++) {
-                        for (let a = 0; a < polygons.length; a++) {
-                            translated_polygons[a].push(polygons[a][k].add(scale));
-                        }
-                    }
-                    for (let a = 0; a < translated_polygons.length; a++) {
-                        let color: string = color_1
-                        if ((i + j + a) % 2) {
-                            color = color_2;
-                        }
-                        canvas_handler.draw_polygon(color, translated_polygons[a]);
-                    }
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type15') {
-            let horizontal_vector: Vector2 = this.corners[1].subtract(this.corners[0]).multiply(2);
-            let vertical_vector: Vector2 = this.corners[1].subtract(this.corners[2]).multiply(2);
-
-            const polygons: Array<Array<Vector2>> = [];
-            for (let i = 0; i < 4; i++) {
-                polygons.push(this.rotate_polygon(polygon, new Vector2(0, 0), Math.PI * (i / 2), 0));
-            }
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const scale: Vector2 = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
-                    let translated_polygons: Array<Array<Vector2>> = [];
                     for (let k = 0; k < polygons.length; k++) {
-                        translated_polygons.push(this.translate_polygon(polygons[k], scale));
+                        canvas_handler.draw_polygon(colors[color_function(i, j, k)], this.translate_polygon(polygons[k], scale));
                     }
-                    for (let a = 0; a < translated_polygons.length; a++) {
-                        let color: string = color_1
-                        if (a % 2) {
-                            color = color_2;
-                        }
-                        canvas_handler.draw_polygon(color, translated_polygons[a]);
-                    }
-                }
-            }
-        }
-        else if (this.tesselation_type === 'type16') {
-            let horizontal_vector: Vector2 = this.corners[1].subtract(this.corners[4]).add(this.corners[2].subtract(this.corners[1]).rotate(1.5 * Math.PI)).add(this.corners[3].subtract(this.corners[4]).rotate(1.5 * Math.PI));
-            let vertical_vector: Vector2 = this.corners[1].subtract(this.corners[0]).add(this.corners[2].subtract(this.corners[1]).rotate(1.5 * Math.PI)).add(this.corners[2].subtract(this.corners[3]).rotate(0.5 * Math.PI));
-
-            const polygons: Array<Array<Vector2>> = [
-                this.rotate_polygon(polygon, new Vector2(0, 0), Math.PI * (0 / 2), 0),
-                this.rotate_polygon(polygon, this.corners[3].subtract(this.corners[0]), Math.PI * (1 / 2), 0),
-                this.rotate_polygon(polygon, this.corners[3].subtract(this.corners[0]).multiply(2).add(this.corners[2]).subtract(this.corners[3]), Math.PI * (2 / 2), 0),
-                this.rotate_polygon(polygon, this.corners[2].subtract(this.corners[0]), Math.PI * (3 / 2), 0)
-            ];
-
-            for (let i = -offset; i < offset; i++) {
-                for (let j = -offset; j < offset; j++) {
-                    const scale: Vector2 = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
-                    let translated_polygons: Array<Array<Vector2>> = [];
-                    for (let k = 0; k < polygons.length; k++) {
-                        translated_polygons.push(this.translate_polygon(polygons[k], scale));
-                    }
-                    canvas_handler.draw_polygon(colors[(((0 + i) % 3) + 3) % 3], translated_polygons[0]);
-                    canvas_handler.draw_polygon(colors[(((1 + i) % 3) + 3) % 3], translated_polygons[1]);
-                    canvas_handler.draw_polygon(colors[(((2 + i) % 3) + 3) % 3], translated_polygons[2]);
-                    canvas_handler.draw_polygon(colors[(((1 + i) % 3) + 3) % 3], translated_polygons[3]);
                 }
             }
         }

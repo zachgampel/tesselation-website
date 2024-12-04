@@ -453,7 +453,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Kites (with inner mirro) rotated',
+                'name': 'Kites (with inner mirror) rotated',
                 'symmetry': '2-way',
                 'shape type': 'kite',
                 'tesselation type': 'type6',
@@ -495,7 +495,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Hexagons rotated',
+                'name': 'Hexagons, rotated',
                 'symmetry': '2-way',
                 'shape type': 'regular',
                 'tesselation type': 'type7',
@@ -617,7 +617,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Parallelograms, flipped',
+                'name': 'Parallelograms',
                 'symmetry': '2-way with flip',
                 'shape type': 'regular',
                 'tesselation type': 'type8',
@@ -663,7 +663,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Kites, flipped',
+                'name': 'Kites',
                 'symmetry': '2-way with flip',
                 'shape type': 'kite',
                 'tesselation type': 'type9',
@@ -710,7 +710,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Hexagons, flipped (on perpendicular axis)',
+                'name': 'Hexagons, flipped on perpendicular axis',
                 'symmetry': '2-way with flip',
                 'shape type': 'regular',
                 'tesselation type': 'type10',
@@ -776,7 +776,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Hexagons, flipped (on parallel axis)',
+                'name': 'Hexagons, flipped on parallel axis',
                 'symmetry': '2-way with flip',
                 'shape type': 'regular',
                 'tesselation type': 'type11',
@@ -846,7 +846,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Rhombuses with 3-way rotation',
+                'name': 'Rhombuses',
                 'symmetry': '3-way',
                 'shape type': 'rhombus',
                 'tesselation type': 'type12',
@@ -898,7 +898,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Rhombuses, with inner mirror and 3-way rotation',
+                'name': 'Rhombuses with inner mirror',
                 'symmetry': '3-way',
                 'shape type': 'rhombus',
                 'tesselation type': 'type12',
@@ -958,7 +958,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Hexagons with 3-way rotation',
+                'name': 'Hexagons',
                 'symmetry': '3-way',
                 'shape type': 'regular',
                 'tesselation type': 'type13',
@@ -994,7 +994,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Triangles with 4-way rotation',
+                'name': 'Triangles',
                 'symmetry': '4-way',
                 'shape type': '4-way-triangle',
                 'tesselation type': 'type14',
@@ -1016,7 +1016,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Squares with 4-way rotation',
+                'name': 'Squares',
                 'symmetry': '4-way',
                 'shape type': 'regular',
                 'tesselation type': 'type15',
@@ -1068,7 +1068,7 @@ export class TileConfigurations {
                 }
             },
             {
-                'name': 'Pentagons with 4-way rotation',
+                'name': 'Pentagons',
                 'symmetry': '4-way',
                 'shape type': 'pentagon 4-way',
                 'tesselation type': 'type16',
@@ -1098,34 +1098,71 @@ export class TileConfigurations {
                     ]
                 }
             },
+            {
+                'name': 'Squares with inner mirror',
+                'symmetry': '4-way',
+                'shape type': 'regular',
+                'tesselation type': 'type15',
+                'sides': 4,
+                'angle': 0,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 0],
+                        [1, 0, '1'],
+                        [2, -1, 0],
+                        [3, 0, '-1']
+                    ],
+                    1: [
+                        [1, 0, 1],
+                        [0, '1', 0],
+                        [2, '-1', 0],
+                        [3, 0, -1],
+                    ],
+                    2: [
+                        [2, 1, 0],
+                        [1, 0, '-1'],
+                        [0, -1, 0],
+                        [3, 0, '1']
+                    ],
+                    3: [
+                        [3, 0, 1],
+                        [0, '-1', 0],
+                        [1, 0, -1],
+                        [2, '1', 0],
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [1, mirrored],
+                        [2, rotated],
+                        [3, translate]
+                    ],
+                    1: [
+                        [1, self],
+                        [0, mirrored],
+                        [2, translate],
+                        [3, rotated]
+                    ],
+                    2: [
+                        [2, self],
+                        [0, rotated],
+                        [1, translate],
+                        [3, mirrored]
+                    ],
+                    3: [
+                        [3, self],
+                        [0, translate],
+                        [1, rotated],
+                        [2, mirrored]
+                    ]
+                }
+            },
         ]
-
-        const s = new Set();
-        for (let i = 0; i < this.data.length; i++) {
-            for (let j = 0; j < this.data[i]['line_relationships'][0].length; j++) {
-                s.add(this.data[i]['line_relationships'][0][j][1]);
-            }
-        }
-        // console.log(s);
     }
 
-    getConfig(shape_name: string): any | null {
-        for (let section of this.data) {
-            if (section['name'] === shape_name) {
-                return section;
-            }
-        }
-        return null;
-    }
-
-    getShapeNames(): string[] {
-        const names: string[] = [];
-        for (let section of this.data) {
-            if (section['name'] !== '') {
-                names.push(section['name']);
-            }
-        }
-        return names;
+    getConfig(index: number): any {
+        return this.data[index];
     }
 }
 
