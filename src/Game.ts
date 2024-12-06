@@ -62,18 +62,13 @@ class Game {
         
         this.step = 0;
         const debug_settings = {
-            // 'mousePos': null,
-            // 'currentStep': null,
-            // 'userAction': null,
             'selectedNewPoint': null,
             'selected_existing_point_index': null,
             'selected_section_index': null,
             'selected_line_index': null,
-            // 'option': null,
-            // 'isCornerSelected': null
         }
 
-        this.debug = new Debug('debug', debug_settings, true);
+        this.debug = new Debug('debug', debug_settings, false);
         this.input = new Input('tesselationSelection');
         this.tiles = [];
         for (let i = 0; i < new TileConfigurations().data.length; i++) {

@@ -5,7 +5,6 @@ export class TileConfigurations {
         const translate = 'rotated4 reflect_x:-1 reflect_y:-1 start_end:1 mirror:0';
         const self = 'rotated4 reflect_x:1 reflect_y:1 start_end:0 mirror:0';
         const rotated = 'rotated4 reflect_x:1 reflect_y:1 start_end:0 mirror:1';
-        const rotated3 = 'rotated4 reflect_x:-1 reflect_y:-1 start_end:1 mirror:0';
         const mirrored = 'rotated4 reflect_x:-1 reflect_y:-1 start_end:1 mirror:1';
         this.data = [
             {
@@ -881,19 +880,19 @@ export class TileConfigurations {
                 'line_relationships': {
                     0: [
                         [0, self],
-                        [1, rotated3]
+                        [1, translate]
                     ],
                     1: [
                         [1, self],
-                        [0, rotated3]
+                        [0, translate]
                     ],
                     2: [
                         [2, self],
-                        [3, rotated3]
+                        [3, translate]
                     ],
                     3: [
                         [3, self],
-                        [2, rotated3]
+                        [2, translate]
                     ]
                 }
             },
@@ -968,28 +967,28 @@ export class TileConfigurations {
                 'line_relationships': {
                     0: [
                         [0, self],
-                        [5, rotated3]
+                        [5, translate]
                     ],
                     1: [
                         [1, self],
-                        [2, rotated3]
+                        [2, translate]
                     ],
                     2: [
                         [2, self],
-                        [1, rotated3]
+                        [1, translate]
                     ],
                     3: [
                         [3, self],
-                        [4, rotated3]
+                        [4, translate]
                     ],
                     4: [
                         [4, self],
-                        [3, rotated3]
+                        [3, translate]
 
                     ],
                     5: [
                         [5, self],
-                        [0, rotated3]
+                        [0, translate]
                     ]
                 }
             },
@@ -1004,14 +1003,14 @@ export class TileConfigurations {
                 'line_relationships': {
                     0: [
                         [0, self],
-                        [2, rotated3]
+                        [2, translate]
                     ],
                     1: [
                         [1, 'flip_rotate']
                     ],
                     2: [
                         [2, self],
-                        [0, rotated3]
+                        [0, translate]
                     ]
                 }
             },
@@ -1075,6 +1074,25 @@ export class TileConfigurations {
                 'sides': 5,
                 'angle': 0,
                 'point_special_settings': 3,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [2, '1', '-1'],
+                        [3, '-1', '1']
+                    ],
+                    1: [],
+                    2: [
+                        [2, 1, 1],
+                        [0, '-1', '1'],
+                        [3, -1, -1]
+                    ],
+                    3: [
+                        [3, 1, 1],
+                        [0, '1', '-1'],
+                        [2, -1, -1]
+                    ],
+                    4: []
+                },
                 'line_relationships': {
                     0: [
                         [0, self],
@@ -1086,7 +1104,7 @@ export class TileConfigurations {
                     ],
                     2: [
                         [2, self],
-                        [2, rotated3]
+                        [2, translate]
                     ],
                     3: [
                         [3, self],
@@ -1155,6 +1173,510 @@ export class TileConfigurations {
                         [0, translate],
                         [1, rotated],
                         [2, mirrored]
+                    ]
+                }
+            },
+            {
+                'name': 'Triangles',
+                'symmetry': '4-way with flip',
+                'shape type': 'regular',
+                'tesselation type': 'type17',
+                'sides': 3,
+                'angle': 0,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [1, 0, 2]
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [2, 1, -1]
+                    ],
+                    2: [
+                        [2, 1, 1],
+                        [1, 1, -1]
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [2, rotated]
+                    ],
+                    1: [
+                        [1, 'flip_rotate'],
+                    ],
+                    2: [
+                        [2, self],
+                        [0, rotated],
+                    ]
+                }
+            },
+            {
+                'name': 'Quadrilaterals (touching) rotated and flipped',
+                'symmetry': '4-way with flip',
+                'shape type': 'regular',
+                'tesselation type': 'type18',
+                'sides': 4,
+                'angle': 0,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [1, 0, 1],
+                        [3, 0, 1]
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [3, 1, -1]
+                    ],
+                    2: [
+                        [2, 1, 1]
+                    ],
+                    3: [
+                        [3, 1, 1],
+                        [1, 1, -1]
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [3, rotated]
+                    ],
+                    1: [
+                        [1, 'flip_rotate'],
+                    ],
+                    2: [
+                        [2, 'flip_rotate'],
+                    ],
+                    3: [
+                        [3, self],
+                        [0, rotated]
+                    ]
+                }
+            },
+            {
+                'name': 'Quadrilaterals (isolated) rotated and flipped',
+                'symmetry': '4-way with flip',
+                'shape type': 'regular',
+                'tesselation type': 'type19',
+                'sides': 4,
+                'angle': 45,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [2, -1, 1]
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [3, -1, 1]
+                    ],
+                    2: [
+                        [2, 1, 1],
+                        [1, 1, -1]
+                    ],
+                    3: [
+                        [3, 1, 1],
+                        [0, 1, -1]
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [2, rotated]
+                    ],
+                    1: [
+                        [1, 'flip_rotate'],
+                    ],
+                    2: [
+                        [2, self],
+                        [0, rotated]
+                    ],
+                    3: [
+                        [3, 'flip_rotate'],
+                    ]
+                }
+            },
+            {
+                'name': 'Rectangles with 2-way flip',
+                'symmetry': '4-way with flip',
+                'shape type': 'regular',
+                'tesselation type': 'type20',
+                'sides': 4,
+                'angle': 45,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [1, 0, 1],
+                        [3, 1, 0],
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [0, 0, 1],
+                        [2, 1, 0]
+                    ],
+                    2: [
+                        [2, 1, 1],
+                        [1, 1, 0],
+                        [3, 0, 1]
+                    ],
+                    3: [
+                        [3, 1, 1],
+                        [0, 1, 0],
+                        [2, 0, 1]
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [2, rotated]
+                    ],
+                    1: [
+                        [1, self],
+                        [3, rotated]
+                    ],
+                    2: [
+                        [2, self],
+                        [0, rotated]
+                    ],
+                    3: [
+                        [3, self],
+                        [1, rotated]
+                    ]
+                }
+            },
+            {
+                'name': 'Pentagons rotated and flipped',
+                'symmetry': '4-way with flip',
+                'shape type': 'pentagon1',
+                'tesselation type': 'type21',
+                'sides': 5,
+                'angle': 0,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [1, 1, 0],
+                        [2, -1, 0],
+                        [3, -1, 1]
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [2, 1, 1]
+                    ],
+                    2: [
+                        [2, 1, 1],
+                        [1, 1, 1]
+                    ],
+                    3: [
+                        [3, 1, 1],
+                        [0, -1, 1],
+                        [1, -1, 0],
+                        [2, 1, 0]
+                    ],
+                    4: [
+                        [4, 1, 1],
+                        [0, 1, 0],
+                        [3, 1, 0]
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [2, translate]
+                    ],
+                    1: [
+                        [1, 'flip_rotate'],
+                    ],
+                    2: [
+                        [2, self],
+                        [0, translate]
+                    ],
+                    3: [
+                        [3, self],
+                        [4, rotated]
+                    ],
+                    4: [
+                        [4, self],
+                        [3, rotated]
+                    ]
+                }
+            },
+            {
+                'name': 'Hexagons rotated and flipped',
+                'symmetry': '4-way with flip',
+                'shape type': 'regular',
+                'tesselation type': 'type22',
+                'sides': 6,
+                'angle': 0,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [1, 0, 1],
+                        [5, 0, 1]
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [2, 0, 1],
+                        [4, 0, -1],
+                        [5, 1, -1]
+                    ],
+                    2: [
+                        [2, 1, 1],
+                        [4, 1, 1]
+                    ],
+                    3: [
+                        [3, 1, 1]
+                    ],
+                    4: [
+                        [4, 1, 1],
+                        [2, 1, 1]
+                    ],
+                    5: [
+                        [5, 1, 1],
+                        [1, 1, -1],
+                        [2, 0, -1],
+                        [4, 0, 1]
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [5, rotated]
+                    ],
+                    1: [
+                        [1, self],
+                        [4, translate]
+                    ],
+                    2: [
+                        [2, 'flip_rotate']
+                    ],
+                    3: [
+                        [3, 'flip_rotate']
+                    ],
+                    4: [
+                        [4, self],
+                        [1, translate]
+                    ],
+                    5: [
+                        [5, self],
+                        [0, rotated]
+                    ]
+                }
+            },
+            {
+                'name': 'Pentagons with 2-way flip',
+                'symmetry': '4-way with flip',
+                'shape type': 'pentagon 4-way',
+                'tesselation type': 'type23',
+                'sides': 5,
+                'angle': 0,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [2, '1', '1'],
+                        [3, '-1', '-1']
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [2, 1, 1],
+                        [3, '1', '1']
+                    ],
+                    2: [
+                        [2, 1, 1],
+                        [1, 1, 1],
+                        [3, '1', '1']
+                    ],
+                    3: [
+                        [3, 1, 1],
+                        [2, '-1', '-1'],
+                        [4, 1, 1]
+                    ],
+                    4: [
+                        [4, 1, 1],
+                        [2, '-1', '-1'],
+                        [3, 1, 1]
+                    ],
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [3, rotated]
+                    ],
+                    1: [
+                        [1, self],
+                        [4, rotated]
+                    ],
+                    2: [
+                        [2, 'flip_rotate']
+                    ],
+                    3: [
+                        [3, self],
+                        [0, rotated]
+                    ],
+                    4: [
+                        [4, self],
+                        [1, rotated]
+                    ],
+                }
+            },
+            {
+                'name': 'Hexagons with 2-way flip',
+                'symmetry': '4-way with flip',
+                'shape type': 'regular',
+                'tesselation type': 'type24',
+                'sides': 6,
+                'angle': 0,
+                'point_relationships': {
+                    0: [
+                        [0, 1, 1],
+                        [3, -1, 1],
+                    ],
+                    1: [
+                        [1, 1, 1],
+                        [3, 1, -1],
+                        [4, -1, 1]
+                    ],
+                    2: [
+                        [2, 1, 1],
+                        [0, 1, -1],
+                        [5, -1, 1]
+                    ],
+                    3: [
+                        [3, 1, 1],
+                        [0, -1, 1]
+                    ],
+                    4: [
+                        [4, 1, 1],
+                        [0, 1, 1],
+                        [2, 1, -1]
+                    ],
+                    5: [
+                        [5, 1, 1],
+                        [1, 1, -1],
+                        [3, 1, 1]
+                    ]
+                },
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [2, rotated]
+                    ],
+                    1: [
+                        [1, self],
+                        [4, rotated]
+                    ],
+                    2: [
+                        [2, self],
+                        [0, rotated]
+                    ],
+                    3: [
+                        [3, 'flip_rotate']
+                    ],
+                    4: [
+                        [4, self],
+                        [1, rotated]
+                    ],
+                    5: [
+                        [5, 'flip_rotate']
+                    ],
+                }
+            },
+            {
+                'name': 'Triangles',
+                'symmetry': '6-way',
+                'shape type': 'regular',
+                'tesselation type': 'type25',
+                'sides': 3,
+                'angle': 90,
+                'point_special_settings': 4,
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [2, translate]
+                    ],
+                    1: [
+                        [1, 'flip_rotate']
+                    ],
+                    2: [
+                        [2, self],
+                        [0, translate]
+                    ]
+                }
+            },
+            {
+                'name': 'Isoscelese Triangles',
+                'symmetry': '6-way',
+                'shape type': 'isoscelese triangle',
+                'tesselation type': 'type26',
+                'sides': 3,
+                'angle': 0,
+                'point_special_settings': 5,
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [2, translate]
+                    ],
+                    1: [
+                        [1, 'flip_rotate']
+                    ],
+                    2: [
+                        [2, self],
+                        [0, translate]
+                    ]
+                }
+            },
+            {
+                'name': 'Kites',
+                'symmetry': '6-way',
+                'shape type': 'kite',
+                'tesselation type': 'type27',
+                'sides': 3,
+                'angle': 0,
+                'point_special_settings': 6,
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [1, translate]
+                    ],
+                    1: [
+                        [1, self],
+                        [0, translate]
+                    ],
+                    2: [
+                        [2, self],
+                        [3, translate]
+                    ],
+                    3: [
+                        [3, self],
+                        [2, translate]
+                    ]
+                }
+            },
+            {
+                'name': 'Pentagons',
+                'symmetry': '6-way',
+                'shape type': 'pentagon6-way',
+                'tesselation type': 'type28',
+                'sides': 5,
+                'angle': 0,
+                'point_special_settings': 7,
+                'line_relationships': {
+                    0: [
+                        [0, self],
+                        [4, translate]
+                    ],
+                    1: [
+                        [1, 'flip_rotate']
+                    ],
+                    2: [
+                        [2, self],
+                        [3, translate]
+                    ],
+                    3: [
+                        [3, self],
+                        [2, translate]
+                    ],
+                    4: [
+                        [4, self],
+                        [0, translate]
                     ]
                 }
             },

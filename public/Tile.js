@@ -39,10 +39,12 @@ export class Tile {
             this.corners.push(new Vector2(350 + 0, 350 - 100));
         }
         else if (shape_type === 'kite') {
-            this.corners.push(new Vector2(350 + 100, 350 + 0));
-            this.corners.push(new Vector2(350 + 0, 350 + 200));
-            this.corners.push(new Vector2(350 - 100, 350 + 0));
-            this.corners.push(new Vector2(350 + 0, 350 - 100));
+            let x = new Vector2(100, 0);
+            this.corners.push(new Vector2(350, 350));
+            this.corners.push(this.corners[0].add(x.rotate(1 / 6 * Math.PI)));
+            this.corners.push(this.corners[1].add(x.scale(Math.sqrt(3)).rotate(4 / 6 * Math.PI)));
+            this.corners.push(this.corners[2].add(x.scale(Math.sqrt(3)).rotate(-4 / 6 * Math.PI)));
+            this.corners.push(this.corners.shift());
         }
         else if (shape_type === 'rhombus') {
             this.corners.push(new Vector2(400 + 100, 350));
@@ -63,6 +65,22 @@ export class Tile {
             this.corners.push(this.corners[1].add(edge.rotate(2 * Math.PI / 3)));
             this.corners.push(new Vector2(this.corners[2].x - edge_length * (Math.sqrt(3) - 1), this.corners[2].y));
             this.corners.push(this.corners[3].add(edge.rotate(4 * Math.PI / 3)));
+        }
+        else if (shape_type === 'isoscelese triangle') {
+            let center = new Vector2(350, 350);
+            let edge = new Vector2(200, 0);
+            this.corners.push(center);
+            this.corners.push(this.corners[0].add(edge.rotate(Math.PI / 6)));
+            this.corners.push(this.corners[0].add(edge.rotate(5 * Math.PI / 6)));
+        }
+        else if (shape_type === 'pentagon6-way') {
+            let center = new Vector2(350, 350);
+            let edge = new Vector2(200, 0);
+            this.corners.push(center);
+            this.corners.push(this.corners[0].add(edge.rotate(4 / 3 * Math.PI)));
+            this.corners.push(this.corners[1].add(edge.scale(0.5).rotate(10 / 6 * Math.PI)));
+            this.corners.push(this.corners[2].add(edge.scale(0.5).rotate(0 * Math.PI)));
+            this.corners.push(this.corners[3].add(edge.scale(0.5).rotate(2 / 6 * Math.PI)));
         }
     }
     create_lines() {
@@ -424,30 +442,94 @@ export class Tile {
                 }
             }
             else if (this.point_special_settings === 3) {
-                let numbers = [];
-                if (selected_corner_index === 0)
-                    numbers = [0, 1, 0, 2, 1, 4, 0, 3, 4];
-                if (selected_corner_index === 1)
-                    numbers = [1, 1, 0, 2, 1];
-                if (selected_corner_index === 2)
-                    numbers = [2, 2, 1, 0, 1, 4, 0, 3, 4];
-                if (selected_corner_index === 3)
-                    numbers = [3, 4, 3, 0, 4, 0, 1, 2, 1];
-                if (selected_corner_index === 4)
-                    numbers = [4, 0, 4, 3, 4];
-                const [a, b, c, d, e, f, g, h, i] = numbers;
-                this.corners[a].copy(mouse_pos);
-                const magnitude_1 = this.corners[b].subtract(this.corners[c]);
-                const magnitude_rotated_1 = magnitude_1.rotate(0.5 * Math.PI);
-                this.corners[d].copy(this.corners[e].add(magnitude_rotated_1));
-                if (f !== undefined) {
-                    const magnitude_2 = this.corners[f].subtract(this.corners[g]);
-                    const magnitude_rotated_2 = magnitude_2.rotate(1.5 * Math.PI);
-                    this.corners[h].copy(this.corners[i].add(magnitude_rotated_2));
+                if (selected_corner_index === 1 || selected_corner_index === 4) {
+                    let numbers = [];
+                    if (selected_corner_index === 1)
+                        numbers = [1, 1, 0, 2];
+                    if (selected_corner_index === 4)
+                        numbers = [4, 0, 4, 3];
+                    const [a, b, c, d] = numbers;
+                    this.corners[a].copy(mouse_pos);
+                    const magnitude_1 = this.corners[b].subtract(this.corners[c]);
+                    const magnitude_rotated_1 = magnitude_1.rotate(0.5 * Math.PI);
+                    this.corners[d].copy(this.corners[a].add(magnitude_rotated_1));
                 }
             }
-            else {
-                const point_relationships = this.point_relationships[selected_corner_index];
+            else if (this.point_special_settings === 4) {
+                let angle = 3 / 6 * Math.PI;
+                if (selected_corner_index === 1)
+                    angle = 7 / 6 * Math.PI;
+                if (selected_corner_index === 2)
+                    angle = 11 / 6 * Math.PI;
+                const projection = offset.projection(new Vector2(Math.cos(angle) * offset.magnitude(), Math.sin(angle) * offset.magnitude()));
+                this.corners[selected_corner_index].copy(this.corners[selected_corner_index].add(projection));
+                this.corners[(selected_corner_index + 1) % 3].copy(this.corners[(selected_corner_index + 1) % 3].add(projection.rotate(2 / 3 * Math.PI)));
+                this.corners[(selected_corner_index + 2) % 3].copy(this.corners[(selected_corner_index + 2) % 3].add(projection.rotate(4 / 3 * Math.PI)));
+            }
+            else if (this.point_special_settings === 5) {
+                if (selected_corner_index === 0) {
+                    let y = this.corners[1].y - this.corners[0].y - offset.y;
+                    let x = y / Math.tan(Math.PI / 6);
+                    this.corners[0].y = mouse_pos.y;
+                    this.corners[1].copy(this.corners[0].add(new Vector2(x, y)));
+                    this.corners[2].copy(this.corners[0].add(new Vector2(-x, y)));
+                }
+                else if (selected_corner_index === 1 || selected_corner_index === 2) {
+                    let angle = (selected_corner_index === 1) ? 1 / 6 * Math.PI : -1 / 6 * Math.PI;
+                    const projection = offset.projection(new Vector2(Math.cos(angle) * offset.magnitude(), Math.sin(angle) * offset.magnitude()));
+                    this.corners[selected_corner_index].copy(this.corners[selected_corner_index].add(projection));
+                    this.corners[selected_corner_index % 2 + 1].copy(this.corners[selected_corner_index % 2 + 1].add(projection.multiply(new Vector2(-1, 1))));
+                }
+            }
+            else if (this.point_special_settings === 6) {
+                if (selected_corner_index === 0 || selected_corner_index === 2) {
+                    let angle = (selected_corner_index === 0) ? 4 / 6 * Math.PI : -4 / 6 * Math.PI;
+                    let opposite_index = (selected_corner_index === 0) ? 2 : 0;
+                    const projection = offset.projection(new Vector2(Math.cos(angle) * offset.magnitude(), Math.sin(angle) * offset.magnitude()));
+                    this.corners[selected_corner_index].copy(this.corners[selected_corner_index].add(projection));
+                    this.corners[opposite_index].copy(this.corners[opposite_index].add(projection.multiply(new Vector2(-1, 1))));
+                    this.corners[3].copy(this.corners[3].add(projection.multiply(new Vector2(0, 4 / 3))));
+                }
+                if (selected_corner_index === 3) {
+                    let angle = 1 / 2 * Math.PI;
+                    const projection = offset.projection(new Vector2(Math.cos(angle) * offset.magnitude(), Math.sin(angle) * offset.magnitude()));
+                    this.corners[3].copy(this.corners[3].add(projection));
+                    this.corners[0].copy(this.corners[0].add(projection.rotate(1 / 6 * Math.PI).scale(Math.sqrt(3) / 2)));
+                    this.corners[2].copy(this.corners[2].add(projection.rotate(11 / 6 * Math.PI).scale(Math.sqrt(3) / 2)));
+                }
+                if (selected_corner_index === 1) {
+                    let angle = 3 / 2 * Math.PI;
+                    const projection = offset.projection(new Vector2(Math.cos(angle) * offset.magnitude(), Math.sin(angle) * offset.magnitude()));
+                    this.corners[1].copy(this.corners[1].add(projection));
+                    this.corners[0].copy(this.corners[0].add(projection.rotate(5 / 3 * Math.PI).scale(0.5)));
+                    this.corners[2].copy(this.corners[2].add(projection.rotate(1 / 3 * Math.PI).scale(0.5)));
+                }
+            }
+            else if (this.point_special_settings === 7) {
+                if (selected_corner_index === 0) {
+                    this.corners[0].copy(mouse_pos);
+                    this.corners[1].copy(this.corners[1].add(offset.rotate(1 / 3 * Math.PI)));
+                }
+                else if (selected_corner_index === 1) {
+                    this.corners[1].copy(mouse_pos);
+                    this.corners[0].copy(this.corners[0].add(offset.rotate(5 / 3 * Math.PI)));
+                }
+                else if (selected_corner_index === 2) {
+                    this.corners[2].copy(mouse_pos);
+                    this.corners[3].copy(this.corners[3].add(offset.rotate(1 / 6 * Math.PI).scale(1 / Math.sqrt(3))));
+                }
+                else if (selected_corner_index === 3) {
+                    this.corners[3].copy(mouse_pos);
+                    this.corners[2].copy(this.corners[2].add(offset.rotate(-1 / 6 * Math.PI).scale(Math.sqrt(3))));
+                }
+                else if (selected_corner_index === 4) {
+                    this.corners[4].copy(mouse_pos);
+                    this.corners[1].copy(this.corners[1].add(offset.rotate(5 / 3 * Math.PI)));
+                    this.corners[2].copy(this.corners[2].add(offset.rotate(2 / 3 * Math.PI)));
+                }
+            }
+            if (this.point_relationships !== undefined) {
+                let point_relationships = this.point_relationships[selected_corner_index];
                 for (let i = 0; i < point_relationships.length; i++) {
                     const [corresponding_point_index, x_multiplier, y_multiplier] = this.point_relationships[selected_corner_index][i];
                     const x_multiplier_type = typeof x_multiplier;
@@ -490,8 +572,8 @@ export class Tile {
                 }
                 const line_start = line.points[0].pos;
                 const line_end = line.points[line.points.length - 1].pos;
-                line_start.copy(line_start.add(offset.multiply(0.5)));
-                line_end.copy(line_end.add(offset.multiply(0.5)));
+                line_start.copy(line_start.add(offset.scale(0.5)));
+                line_end.copy(line_end.add(offset.scale(0.5)));
             }
         }
     }
@@ -546,7 +628,7 @@ export class Tile {
         for (let point of this.corners) {
             center = center.add(point);
         }
-        return center.multiply(1 / this.corners.length);
+        return center.scale(1 / this.corners.length);
     }
     draw_tesselation(canvas_handler, offset, colors) {
         if (this.tesselation_type !== null) {
@@ -577,7 +659,7 @@ export class Tile {
             }
             else if (this.tesselation_type === 'type3') {
                 polygons_count = 2;
-                horizontal_vector = this.corners[1].subtract(this.corners[0]).multiply(2);
+                horizontal_vector = this.corners[1].subtract(this.corners[0]).scale(2);
                 vertical_vector = this.corners[2].subtract(this.corners[1]);
                 rotate_flip_center = this.corners[0];
                 rotation_angles = [0, Math.PI];
@@ -602,7 +684,7 @@ export class Tile {
             else if (this.tesselation_type === 'type5') {
                 polygons_count = 2;
                 horizontal_vector = this.corners[1].subtract(this.corners[2]);
-                vertical_vector = this.corners[1].subtract(this.corners[0]).multiply(2).add(this.corners[3]).subtract(this.corners[4]);
+                vertical_vector = this.corners[1].subtract(this.corners[0]).scale(2).add(this.corners[3]).subtract(this.corners[4]);
                 rotate_flip_center = this.corners[1];
                 rotation_angles = [0, Math.PI];
                 translations = [
@@ -713,8 +795,8 @@ export class Tile {
             }
             else if (this.tesselation_type === 'type15') {
                 polygons_count = 4;
-                horizontal_vector = this.corners[1].subtract(this.corners[0]).multiply(2);
-                vertical_vector = this.corners[3].subtract(this.corners[0]).multiply(2);
+                horizontal_vector = this.corners[1].subtract(this.corners[0]).scale(2);
+                vertical_vector = this.corners[3].subtract(this.corners[0]).scale(2);
                 rotate_flip_center = this.corners[0];
                 rotation_angles = [0, 0.5 * Math.PI, Math.PI, 1.5 * Math.PI];
                 color_function = (i, j, k) => (k % 2);
@@ -728,7 +810,7 @@ export class Tile {
                 translations = [
                     new Vector2(0, 0),
                     this.corners[3].subtract(this.corners[0]),
-                    this.corners[3].subtract(this.corners[0]).multiply(2).add(this.corners[2]).subtract(this.corners[3]),
+                    this.corners[3].subtract(this.corners[0]).scale(2).add(this.corners[2]).subtract(this.corners[3]),
                     this.corners[2].subtract(this.corners[0])
                 ];
                 color_function = (i, j, k) => {
@@ -738,6 +820,198 @@ export class Tile {
                         return (((1 + i) % 3) + 3) % 3;
                     if (k === 2)
                         return (((2 + i) % 3) + 3) % 3;
+                };
+            }
+            else if (this.tesselation_type === 'type17') {
+                polygons_count = 4;
+                horizontal_vector = new Vector2(2 * (this.corners[0].x - this.corners[1].x), 0);
+                vertical_vector = this.corners[1].subtract(this.corners[2]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI, 0, Math.PI];
+                flip_x = [false, true, true, false];
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[2].subtract(this.corners[0]),
+                    this.corners[0].subtract(this.corners[1]),
+                    new Vector2(0, 0)
+                ];
+                color_function = (i, j, k) => (k % 2);
+            }
+            else if (this.tesselation_type === 'type18') {
+                polygons_count = 4;
+                horizontal_vector = new Vector2(2 * (this.corners[2].x - this.corners[0].x), 0);
+                vertical_vector = this.corners[3].subtract(this.corners[1]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI, 0, Math.PI];
+                flip_x = [false, true, true, false];
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[3].subtract(this.corners[0]),
+                    new Vector2(this.corners[0].x - this.corners[2].x, -(this.corners[0].y - this.corners[2].y)),
+                    new Vector2(this.corners[1].x - this.corners[2].x, -(this.corners[1].y - this.corners[2].y)),
+                ];
+                color_function = (i, j, k) => (k % 2);
+            }
+            else if (this.tesselation_type === 'type19') {
+                polygons_count = 4;
+                horizontal_vector = new Vector2(2 * (this.corners[1].x - this.corners[0].x), 0);
+                vertical_vector = new Vector2(0, this.corners[1].y - this.corners[2].y + this.corners[0].y - this.corners[3].y);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI, 0, Math.PI];
+                flip_x = [false, true, true, false];
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[1].subtract(this.corners[0]).add(new Vector2(-this.corners[0].x + this.corners[3].x, this.corners[0].y - this.corners[3].y)),
+                    new Vector2(this.corners[0].x - this.corners[1].x, this.corners[1].y - this.corners[0].y),
+                    this.corners[3].subtract(this.corners[0])
+                ];
+                color_function = (i, j, k) => (k % 2);
+            }
+            else if (this.tesselation_type === 'type20') {
+                polygons_count = 4;
+                horizontal_vector = this.corners[0].subtract(this.corners[1]).scale(2);
+                vertical_vector = this.corners[0].subtract(this.corners[3]).scale(2);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI, Math.PI, 0];
+                flip_x = [false, true, false, true];
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[1].subtract(this.corners[3]),
+                    new Vector2(0, 0),
+                    this.corners[3].subtract(this.corners[1]),
+                ];
+                color_function = (i, j, k) => (k % 2);
+            }
+            else if (this.tesselation_type === 'type21') {
+                polygons_count = 4;
+                horizontal_vector = this.corners[1].subtract(this.corners[2]);
+                vertical_vector = new Vector2(0, 4 * (this.corners[1].y - this.corners[0].y) + 2 * (this.corners[0].y - this.corners[4].y));
+                rotate_flip_center = this.corners[1];
+                rotation_angles = [0, 0, Math.PI, Math.PI];
+                flip_x = [false, true, true, false];
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[4].subtract(this.corners[3]).add(new Vector2(0, 2 * (this.corners[0].y - this.corners[1].y))),
+                    new Vector2(this.corners[3].x - this.corners[4].x, this.corners[4].y - this.corners[1].y + this.corners[0].y - this.corners[1].y),
+                    this.corners[2].subtract(this.corners[1]),
+                ];
+                color_function = (i, j, k) => {
+                    i = (((i % 3) + 3) % 3);
+                    if (k === 0)
+                        return (i + k) % 3;
+                    if (k === 1)
+                        return (i + k + 1) % 3;
+                    return (i + k + 2) % 3;
+                };
+            }
+            else if (this.tesselation_type === 'type22') {
+                polygons_count = 4;
+                horizontal_vector = this.corners[0].subtract(this.corners[3]).add(this.corners[5]).subtract(this.corners[4]).multiply(new Vector2(2, 0));
+                vertical_vector = this.corners[4].subtract(this.corners[2]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [Math.PI, 0, Math.PI, 0];
+                flip_x = [false, false, true, true];
+                translations = [
+                    this.corners[3].subtract(this.corners[0]).scale(2).add(this.corners[2]).subtract(this.corners[3]),
+                    new Vector2(0, 0),
+                    this.corners[1].subtract(this.corners[0]),
+                    this.corners[0].subtract(this.corners[3]).add(this.corners[5]).subtract(this.corners[4]).multiply(new Vector2(1, -1))
+                ];
+                color_function = (i, j, k) => {
+                    j = ((j % 3) + 3) % 3;
+                    if (j === 0)
+                        return k % 2;
+                    if (j === 1)
+                        return ((k % 2) + 2) % 3;
+                    else
+                        return ((k % 2) + 1) % 3;
+                };
+            }
+            else if (this.tesselation_type === 'type23') {
+                polygons_count = 4;
+                horizontal_vector = this.corners[1].subtract(this.corners[4]).scale(2);
+                vertical_vector = this.corners[1].subtract(this.corners[0]).add(this.corners[2].subtract(this.corners[4]).transpose());
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, Math.PI, 0.5 * Math.PI, 1.5 * Math.PI];
+                flip_x = [false, false, true, true];
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[2].subtract(this.corners[0]).add(this.corners[3]).subtract(this.corners[0]),
+                    this.corners[4].subtract(this.corners[0]).add(this.corners[1].subtract(this.corners[0]).transpose()),
+                    this.corners[1].subtract(this.corners[0]).add(this.corners[0].subtract(this.corners[4]).transpose()),
+                ];
+                color_function = (i, j, k) => {
+                    i = ((-i % 3) + 3) % 3;
+                    if (k === 0)
+                        return (k + i) % 3;
+                    if (k === 1)
+                        return (k + i) % 3;
+                    return (2 + i) % 3;
+                };
+            }
+            else if (this.tesselation_type === 'type24') {
+                polygons_count = 4;
+                horizontal_vector = new Vector2(this.corners[0].x - this.corners[3].x + this.corners[5].x - this.corners[4].x, 0);
+                vertical_vector = new Vector2(0, this.corners[1].y - this.corners[5].y + this.corners[2].y - this.corners[4].y);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 0, Math.PI, Math.PI];
+                flip_x = [false, true, true, false];
+                translations = [
+                    new Vector2(0, 0),
+                    this.corners[1].subtract(this.corners[0]).add(this.corners[0].subtract(this.corners[3]).multiply(new Vector2(1, -1))),
+                    this.corners[3].subtract(this.corners[0]).add(this.corners[1].subtract(this.corners[5]).multiply(new Vector2(-1, 1))),
+                    new Vector2(this.corners[5].x - this.corners[0].x, this.corners[2].y - this.corners[4].y + this.corners[1].y - this.corners[0].y),
+                ];
+                color_function = (i, j, k) => {
+                    return (((k + j) % 3) + 3) % 3;
+                };
+            }
+            else if (this.tesselation_type === 'type25') {
+                polygons_count = 6;
+                horizontal_vector = this.corners[2].subtract(this.corners[1]).add(this.corners[0]).subtract(this.corners[1]);
+                vertical_vector = this.corners[0].subtract(this.corners[2]).add(this.corners[0]).subtract(this.corners[1]);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 1 / 3 * Math.PI, 2 / 3 * Math.PI, 3 / 3 * Math.PI, 4 / 3 * Math.PI, 5 / 3 * Math.PI];
+                flip_x = [false, false, false, false, false, false];
+                color_function = (i, j, k) => {
+                    return k % 2;
+                };
+            }
+            else if (this.tesselation_type === 'type26') {
+                polygons_count = 6;
+                horizontal_vector = this.corners[1].subtract(this.corners[2]);
+                vertical_vector = this.corners[2].subtract(this.corners[1]).rotate(2 / 3 * Math.PI);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 2 / 3 * Math.PI, 4 / 3 * Math.PI, 1 / 3 * Math.PI, Math.PI, 5 / 3 * Math.PI];
+                const vec = new Vector2(0, 2 * (this.corners[0].y - this.corners[1].y));
+                translations = [
+                    new Vector2(0, 0),
+                    new Vector2(0, 0),
+                    new Vector2(0, 0),
+                    vec.rotate(1 / 3 * Math.PI),
+                    vec.rotate(Math.PI),
+                    vec.rotate(5 / 3 * Math.PI)
+                ];
+                color_function = (i, j, k) => {
+                    return (((2 * i + 2 * j + k) % 3) + 3) % 3;
+                };
+            }
+            else if (this.tesselation_type === 'type27') {
+                polygons_count = 6;
+                horizontal_vector = this.corners[0].subtract(this.corners[1]).rotate(1 / 3 * Math.PI).scale(2);
+                vertical_vector = this.corners[0].subtract(this.corners[1]).rotate(2 / 3 * Math.PI).scale(2);
+                rotate_flip_center = this.corners[1];
+                rotation_angles = [0, 1 / 3 * Math.PI, 2 / 3 * Math.PI, Math.PI, 4 / 3 * Math.PI, 5 / 3 * Math.PI];
+                color_function = (i, j, k) => k % 3;
+            }
+            else if (this.tesselation_type === 'type28') {
+                polygons_count = 6;
+                horizontal_vector = this.corners[4].subtract(this.corners[0]).rotate(1 / 3 * Math.PI).scale(2).add(this.corners[2].subtract(this.corners[1]).rotate(2 / 3 * Math.PI));
+                vertical_vector = horizontal_vector.rotate(4 / 6 * Math.PI);
+                rotate_flip_center = this.corners[0];
+                rotation_angles = [0, 1 / 3 * Math.PI, 2 / 3 * Math.PI, Math.PI, 4 / 3 * Math.PI, 5 / 3 * Math.PI];
+                color_function = (i, j, k) => {
+                    return ((((k % 2) + i + j) % 3) + 3) % 3;
                 };
             }
             const polygon = this.create_polygon();
@@ -753,7 +1027,7 @@ export class Tile {
             }
             for (let i = -offset; i < offset; i++) {
                 for (let j = -offset; j < offset; j++) {
-                    const scale = horizontal_vector.multiply(i).add(vertical_vector.multiply(j));
+                    const scale = horizontal_vector.scale(i).add(vertical_vector.scale(j));
                     for (let k = 0; k < polygons.length; k++) {
                         canvas_handler.draw_polygon(colors[color_function(i, j, k)], this.translate_polygon(polygons[k], scale));
                     }

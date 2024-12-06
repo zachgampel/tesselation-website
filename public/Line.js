@@ -27,7 +27,7 @@ export class Line {
         }
         let t = ap.dot(ab) / ab_squared;
         t = Math.max(0, Math.min(1, t));
-        let closest_point = start.add(ab.multiply(t));
+        let closest_point = start.add(ab.scale(t));
         let closest_distance = closest_point.distance_to(point);
         if (closest_distance <= thresh) {
             return [closest_distance, closest_point];
@@ -76,11 +76,11 @@ export class Line {
         const curve_points = [];
         for (let i = 0; i < num_points; i++) {
             let t = i / num_points;
-            const a = p1.multiply(2);
+            const a = p1.scale(2);
             const b = p2.subtract(p0);
-            const c = p0.multiply(2).subtract(p1.multiply(5)).add(p2.multiply(4)).subtract(p3);
-            const d = p0.multiply(-1).add(p1.multiply(3)).subtract(p2.multiply(3)).add(p3);
-            const point = (a.add(b.multiply(t)).add(c.multiply(t ** 2)).add(d.multiply(t ** 3))).multiply(0.5);
+            const c = p0.scale(2).subtract(p1.scale(5)).add(p2.scale(4)).subtract(p3);
+            const d = p0.scale(-1).add(p1.scale(3)).subtract(p2.scale(3)).add(p3);
+            const point = (a.add(b.scale(t)).add(c.scale(t ** 2)).add(d.scale(t ** 3))).scale(0.5);
             curve_points.push(point);
         }
         curve_points.push(p2); // Ensure the spline finishes at the end of the section
@@ -134,7 +134,7 @@ export class Line {
         for (let j = 1; j < this.points.length - 1; j++) {
             let angle = this.points[j].angle;
             let t = this.points[j].t;
-            const new_pos = curr_start.add(curr_end.subtract(curr_start).rotate(angle).multiply(t));
+            const new_pos = curr_start.add(curr_end.subtract(curr_start).rotate(angle).scale(t));
             this.points[j].pos = new_pos;
         }
     }

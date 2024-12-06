@@ -94,8 +94,8 @@ export class CanvasHandler {
             this.ctx.strokeStyle = color;
             this.ctx.lineWidth = width;
             this.ctx.beginPath();
-            this.ctx.moveTo(p1.x, p1.y);
-            this.ctx.lineTo(p2.x, p2.y);
+            this.ctx.moveTo(Math.floor(p1.x), Math.floor(p1.y));
+            this.ctx.lineTo(Math.floor(p2.x), Math.floor(p2.y));
             this.ctx.stroke();
         }
     }
