@@ -1,7 +1,7 @@
 class Point {
-    constructor(pos, is_straight, angle, t) {
+    constructor(pos, corner_type, angle, t) {
         this.pos = pos;
-        this.type = is_straight;
+        this.corner_type = corner_type;
         this.angle = angle;
         this.t = t;
     }
@@ -36,7 +36,7 @@ export class Line {
             return [thresh, null];
         }
     }
-    get_spline_points() {
+    get_spline_points(pan) {
         const spline_points = [];
         const spline_sections = this._get_spline_sections();
         for (let spline_section of spline_sections) {
@@ -49,6 +49,11 @@ export class Line {
                 }
             }
         }
+        for (let i = 0; i < spline_points.length; i++) {
+            for (let j = 0; j < spline_points[i].length; j++) {
+                spline_points[i][j] = spline_points[i][j].add(pan);
+            }
+        }
         return spline_points;
     }
     // Separate the full spline into sections based on if they're curved or straight
@@ -56,9 +61,9 @@ export class Line {
         const spline_sections = [];
         let curr_section = [];
         for (const point of this.points) {
-            let control_point_type = point.type;
+            let control_point_type = point.corner_type;
             let control_point_pos = point.pos;
-            if (curr_section.length === 0 || control_point_type)
+            if (curr_section.length === 0 || control_point_type === false)
                 curr_section.push(control_point_pos);
             else {
                 curr_section.push(control_point_pos);
@@ -71,8 +76,11 @@ export class Line {
         }
         return spline_sections;
     }
-    static _catmull_rom_spline(p0, p1, p2, p3, num_points = 10) {
+    static _catmull_rom_spline(p0, p1, p2, p3) {
         // Generates Catmull-Rom spline points between p1 and p2.
+        let num_points = 10;
+        // let linear_distance = p0.distance_to(p3);
+        // num_points = Math.max(5, Math.floor(linear_distance / 20))
         const curve_points = [];
         for (let i = 0; i < num_points; i++) {
             let t = i / num_points;
@@ -86,12 +94,7 @@ export class Line {
         curve_points.push(p2); // Ensure the spline finishes at the end of the section
         return curve_points;
     }
-    draw_spline(canvas_handler, color) {
-        for (const spline_segment of this.get_spline_points()) {
-            canvas_handler.draw_aalines(color, spline_segment);
-        }
-    }
-    draw_control_points(canvas_handler, color_1, color_2, color_3, radius) {
+    draw_control_points(canvas_handler, pan, color_1, color_2, color_3, radius) {
         for (let i = 0; i < this.points.length; i++) {
             const point = this.points[i];
             let color = null;
@@ -99,13 +102,13 @@ export class Line {
             if (i == 0 || i == this.points.length - 1) {
                 color = color_1;
             }
-            else if (point.type) {
+            else if (point.corner_type) {
                 color = color_2;
             }
             else {
                 color = color_3;
             }
-            canvas_handler.drawCircle(Math.floor(point_pos.x), Math.floor(point_pos.y), radius, color);
+            canvas_handler.draw_circle(Math.floor(point_pos.x + pan.x), Math.floor(point_pos.y + pan.y), radius, color);
         }
     }
     get_point_relative_parameters(point_pos) {
@@ -143,13 +146,13 @@ export class Line {
             this.points.splice(point_index, 1);
         }
     }
-    move_point(point_index, point_delta) {
+    move_point_relative(point_index, point_delta) {
         this.points[point_index].pos.copy(this.points[point_index].pos.add(point_delta));
         const [t, angle] = this.get_point_relative_parameters(this.points[point_index].pos);
         this.points[point_index].t = t;
         this.points[point_index].angle = angle;
     }
-    move_point2(point_index, new_pos) {
+    move_point_absolute(point_index, new_pos) {
         this.points[point_index].pos.copy(new_pos);
         const [t, angle] = this.get_point_relative_parameters(this.points[point_index].pos);
         this.points[point_index].t = t;

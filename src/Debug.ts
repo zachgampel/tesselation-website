@@ -15,7 +15,7 @@ export class Debug {
             console.error('Failed to get debugElement');
         }
     }
-    initialize() {
+    initialize(): void {
         if (this.enabled === false) {
             return;
         }
@@ -29,7 +29,7 @@ export class Debug {
         }
     }
 
-    update() {
+    update(): void {
         if (this.enabled === false) {
             return;
         }
@@ -41,7 +41,7 @@ export class Debug {
         }
     }
 
-    updatePointer(key: string, value: any) {
+    updatePointer(key: string, value: any): void {
         if (this.enabled === false) return;
         this.elements[key] = value;
     }

@@ -3,12 +3,12 @@ import { Vector2 } from './Vector2.js';
 
 class Point {
     pos: Vector2;
-    type: boolean;
+    corner_type: boolean;
     angle: number;
     t: number;
-    constructor(pos: Vector2, is_straight: boolean, angle: number, t: number) {
+    constructor(pos: Vector2, corner_type: boolean, angle: number, t: number) {
         this.pos = pos;
-        this.type = is_straight;
+        this.corner_type = corner_type;
         this.angle = angle;
         this.t = t;
 	}
@@ -49,9 +49,9 @@ export class Line {
         }
 	}
 
-    get_spline_points(): Array<Array<Vector2>> {
-        const spline_points = [];
-        const spline_sections = this._get_spline_sections();
+    get_spline_points(pan:Vector2): Array<Array<Vector2>> {
+        const spline_points: Array<Array<Vector2>> = [];
+        const spline_sections: Array<Array<Vector2>> = this._get_spline_sections();
         for (let spline_section of spline_sections) {
             if (spline_section.length == 2)
                 spline_points.push(spline_section);
@@ -62,18 +62,24 @@ export class Line {
 				}
 			}
 		}
+
+        for (let i = 0; i < spline_points.length; i++) {
+            for (let j = 0; j < spline_points[i].length; j++) {
+                spline_points[i][j] = spline_points[i][j].add(pan);
+            }
+        }
 		
         return spline_points;
 	}
 
     // Separate the full spline into sections based on if they're curved or straight
     _get_spline_sections(): Array<Array<Vector2>> {
-        const spline_sections = [];
+        const spline_sections: Array<Array<Vector2>> = [];
         let curr_section: Array<Vector2> = [];
         for (const point of this.points) {
-            let control_point_type: boolean = point.type;
+            let control_point_type: boolean = point.corner_type;
 			let control_point_pos: Vector2 = point.pos;
-            if (curr_section.length === 0 || control_point_type)
+            if (curr_section.length === 0 || control_point_type === false)
                 curr_section.push(control_point_pos);
             else {
                 curr_section.push(control_point_pos);
@@ -87,29 +93,26 @@ export class Line {
         return spline_sections;
 	}
 
-    static _catmull_rom_spline(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, num_points=10): Array<Vector2> {
+    static _catmull_rom_spline(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2): Array<Vector2> {
         // Generates Catmull-Rom spline points between p1 and p2.
+        let num_points = 10;
+        // let linear_distance = p0.distance_to(p3);
+        // num_points = Math.max(5, Math.floor(linear_distance / 20))
         const curve_points = []
         for (let i = 0; i < num_points; i++) {
             let t = i / num_points;
-            const a = p1.scale(2);
-            const b = p2.subtract(p0);
-            const c = p0.scale(2).subtract(p1.scale(5)).add(p2.scale(4)).subtract(p3);
-            const d = p0.scale(-1).add(p1.scale(3)).subtract(p2.scale(3)).add(p3);
-            const point = (a.add(b.scale(t)).add(c.scale(t ** 2)).add(d.scale(t ** 3))).scale(0.5);
-            curve_points.push(point)
+            const a: Vector2 = p1.scale(2);
+            const b: Vector2 = p2.subtract(p0);
+            const c: Vector2 = p0.scale(2).subtract(p1.scale(5)).add(p2.scale(4)).subtract(p3);
+            const d: Vector2 = p0.scale(-1).add(p1.scale(3)).subtract(p2.scale(3)).add(p3);
+            const point: Vector2 = (a.add(b.scale(t)).add(c.scale(t ** 2)).add(d.scale(t ** 3))).scale(0.5);
+            curve_points.push(point);
 		}
         curve_points.push(p2);  // Ensure the spline finishes at the end of the section
         return curve_points;
 	}
 
-    draw_spline(canvas_handler: CanvasHandler, color: string) {
-        for (const spline_segment of this.get_spline_points()) {
-			canvas_handler.draw_aalines(color, spline_segment);
-		}
-	}
-
-    draw_control_points(canvas_handler: CanvasHandler, color_1: string, color_2: string, color_3: string, radius: number) {
+    draw_control_points(canvas_handler: CanvasHandler, pan: Vector2, color_1: string, color_2: string, color_3: string, radius: number) {
 		for (let i = 0; i < this.points.length; i++) {
 			const point = this.points[i];
 			let color = null;
@@ -117,17 +120,17 @@ export class Line {
 	        if (i == 0 || i == this.points.length - 1) {
                 color = color_1;
 			}
-            else if (point.type) {
+            else if (point.corner_type) {
                 color = color_2;
 			}
             else {
                 color = color_3;
 			}
-			canvas_handler.drawCircle(Math.floor(point_pos.x), Math.floor(point_pos.y), radius, color);
+			canvas_handler.draw_circle(Math.floor(point_pos.x + pan.x), Math.floor(point_pos.y + pan.y), radius, color);
 		}
 	}
 
-    get_point_relative_parameters(point_pos: Vector2) {
+    get_point_relative_parameters(point_pos: Vector2): [number, number] {
         let line_start = this.points[0].pos;
 		let line_end = this.points[this.points.length - 1].pos;
 
@@ -169,14 +172,14 @@ export class Line {
 		}
 	}
 
-    move_point(point_index: number, point_delta: Vector2) {
+    move_point_relative(point_index: number, point_delta: Vector2) {
         this.points[point_index].pos.copy(this.points[point_index].pos.add(point_delta));
         const [t, angle] = this.get_point_relative_parameters(this.points[point_index].pos);
         this.points[point_index].t = t;
         this.points[point_index].angle = angle;
 	}
 
-    move_point2(point_index: number, new_pos: Vector2) {
+    move_point_absolute(point_index: number, new_pos: Vector2) {
         this.points[point_index].pos.copy(new_pos);
         const [t, angle] = this.get_point_relative_parameters(this.points[point_index].pos);
         this.points[point_index].t = t;

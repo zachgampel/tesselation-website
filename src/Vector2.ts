@@ -16,6 +16,10 @@ export class Vector2 {
         return new Vector2(this.x + other.x, this.y + other.y);
     }
 
+    add_xy(x: number, y: number): Vector2 {
+        return new Vector2(this.x + x, this.y + y);
+    }
+
     subtract(other: Vector2): Vector2 {
         return new Vector2(this.x - other.x, this.y - other.y);
     }
@@ -28,7 +32,6 @@ export class Vector2 {
         return this.x * this.x + this.y * this.y;
     }
 
-    // Calculate the angle to another vector in radians
     angle_to(other: Vector2): number {
         const dot = this.dot(other);
         let magnitudes_multiplied = this.magnitude() * other.magnitude();
@@ -56,13 +59,17 @@ export class Vector2 {
     multiply(other: Vector2): Vector2 {
         return new Vector2(this.x * other.x, this.y * other.y);
     }
+
+    multiply_xy(x: number, y: number): Vector2 {
+        return new Vector2(this.x * x, this.y * y);
+    }
 	
 	length_squared(): number {
         return this.x ** 2 + this.y ** 2;
     }
 	
 	distance_to(other: Vector2): number {
-		return Math.sqrt(((this.x - other.x) ** 2) + ((this.y - other.y) ** 2))
+		return Math.sqrt(((this.x - other.x) ** 2) + ((this.y - other.y) ** 2));
 	}
 
     toString(): string {
