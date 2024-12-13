@@ -3,7 +3,7 @@ import { CanvasHandler } from './CanvasHandler.js';
 import { Debug } from './Debug.js';
 import { Tile } from './Tile.js';
 import { TileSelector } from './TileSelector.js';
-import { TileConfigurations } from './ShapeConfiguration.js';
+import { TileConfigurations } from './TileConfiguration.js';
 
 /*
 Go to Terminal -> New, then enter this command to start auto-compilation: tsc --watch
@@ -17,7 +17,7 @@ class Game {
     color_6: string = 'rgb(250, 237, 205)';
     color_7: string = 'rgb(212, 163, 115)';
 
-    THRESHOLD_DISTANCE: number = 10;
+    threshold_distance: number = 10;
 
     canvas_handler: CanvasHandler = new CanvasHandler('drawCanvas');
     mouse_pos: Vector2 | null= new Vector2(0, 0);
@@ -47,10 +47,16 @@ class Game {
         }
 
         this.debug = new Debug('debug', debug_settings, false);
+        const canvas_center: Vector2 = this.canvas_handler.get_center();
         for (let i = 0; i < new TileConfigurations().data.length; i++) {
-            this.tiles.push(new Tile(i));
+            this.tiles.push(new Tile(i, canvas_center));
         }
         this.tile = this.tiles[this.tile_selector.current_selection];
+
+        window.addEventListener('resize', () => {
+            this.canvas_handler.update_size();
+            this.draw();
+        });
 	}
 	
     update() {
@@ -81,7 +87,7 @@ class Game {
         this.canvas_handler.update();
 		
         if (!this.mouse_down) {
-            this.tile.update(this.mouse_pos, this.transformed_mouse_pos, this.THRESHOLD_DISTANCE);
+            this.tile.update(this.mouse_pos, this.transformed_mouse_pos, this.threshold_distance);
         }
 
         this.debug.updatePointer('mouse_pos', this.mouse_pos);
@@ -116,7 +122,7 @@ class Game {
 		this.canvas_handler.clear_to_white();
         this.tile.draw_tesselation(this.canvas_handler, 10, [this.color_5, this.color_6, this.color_7]);
         
-        this.canvas_handler.draw_shape(this.color_1, this.tile.create_polygon(), false);
+        this.canvas_handler.draw_shape(this.color_1, this.tile.create_polygon(), new Vector2(0, 0), false);
         for (const line of this.tile.lines) {
             line.draw_control_points(this.canvas_handler, this.tile.pan, this.color_2, this.color_3, this.color_4, 3)
 		}

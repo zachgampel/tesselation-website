@@ -1,4 +1,4 @@
-import { TileConfigurations } from './ShapeConfiguration.js';
+import { TileConfigurations } from './TileConfiguration.js';
 
 export class TileSelector {
     tesselation_selection: HTMLDivElement | null;
@@ -39,7 +39,7 @@ export class TileSelector {
             inputs.forEach(input => {
                 input.addEventListener('change', this.updateShape.bind(this)); // Bind to the class instance
             });
-            const first_input = inputs[0] as HTMLInputElement;
+            const first_input = inputs[32] as HTMLInputElement;
             if (first_input) {
                 first_input.checked = true;
                 first_input.dispatchEvent(new Event('change'));

@@ -1,7 +1,7 @@
 import { CanvasHandler } from './CanvasHandler.js';
 import { Line } from './Line.js';
 import { Vector2 } from './Vector2.js';
-import { TileConfigurations } from './ShapeConfiguration.js';
+import { TileConfigurations } from './TileConfiguration.js';
 
 export class Tile {
     lines: Array<Line> = [];
@@ -21,10 +21,10 @@ export class Tile {
     tesselation_type: string | null = null;
     line_relationships: any = {};
 
-    constructor(config_index: number) {
+    constructor(config_index: number, canvas_center: Vector2) {
         const config = this.configurations.data[config_index];
 
-        this.create_corners(config['shape type'], config['sides'], config['angle']);
+        this.create_corners(config['shape type'], config['sides'], config['angle'], canvas_center);
         this.tesselation_pattern = config['symmetry'];
         this.point_relationships = config['point_relationships'];
         this.point_special_settings = config['point_special_settings'];
@@ -33,8 +33,7 @@ export class Tile {
         this.create_lines();
     }
 
-    create_corners(shape_type: string, corner_count: number, angle: number) {
-        const center = new Vector2(350, 350);
+    create_corners(shape_type: string, corner_count: number, angle: number, center: Vector2) {
         const edge_length: number = 100;
         const edge_vector: Vector2 = new Vector2(edge_length, 0);
         this.corners = [];
@@ -54,15 +53,15 @@ export class Tile {
         else if (shape_type === 'kite') {
             this.corners.push(center);
             this.corners.push(this.corners[0].add(edge_vector.rotate(1/6 * Math.PI)));
-            this.corners.push(this.corners[1].add(edge_vector.scale(Math.sqrt(3)).rotate(4/6 * Math.PI)));
-            this.corners.push(this.corners[2].add(edge_vector.scale(Math.sqrt(3)).rotate(-4/6 * Math.PI)));
+            this.corners.push(this.corners[1].add(edge_vector.scale(Math.sqrt(3)).rotate(2/3 * Math.PI)));
+            this.corners.push(this.corners[2].add(edge_vector.scale(Math.sqrt(3)).rotate(4/3 * Math.PI)));
             this.corners.push(this.corners.shift() as Vector2);
         }
         else if (shape_type === 'rhombus') {
-            this.corners.push(center.add_xy(edge_length, 0));
-            this.corners.push(center.add_xy(edge_length * Math.cos(2/3 * Math.PI), edge_length * Math.sin(2/3 * Math.PI)));
-            this.corners.push(center.add_xy(-2 * edge_length, 0));
-            this.corners.push(center.add_xy(edge_length * Math.cos(4/3 * Math.PI), edge_length * Math.sin(4/3 * Math.PI)));
+            this.corners.push(center.add_xy(1.5 * edge_length, 0));
+            this.corners.push(center.add_xy(0.5 * edge_length + edge_length * Math.cos(2/3 * Math.PI), edge_length * Math.sin(2/3 * Math.PI)));
+            this.corners.push(center.add_xy(-1.5 * edge_length, 0));
+            this.corners.push(center.add_xy(0.5 * edge_length + edge_length * Math.cos(4/3 * Math.PI), edge_length * Math.sin(4/3 * Math.PI)));
         }
         else if (shape_type === '4-way-triangle') {
             this.corners.push(center);
@@ -173,12 +172,7 @@ export class Tile {
     }
 
     calculate_point(relationship_settings: string, relationship_line: Line, input_point: Vector2): [number, Vector2] {
-        const settings: Record<string, number> = {};
-        const input_settings: string[] = relationship_settings.split(' ');
-        for (let input_setting of input_settings) {
-            const [key, value] = input_setting.split(':');
-            settings[key] = +value;
-        }
+        const settings: Record<string, number> = this.configurations.get_settings(relationship_settings);
         
         if (this.selected_line_index !== null && (this.selected_existing_point_index !== null || this.selected_section_index !== null)) {
             const line: Line = this.lines[this.selected_line_index];
@@ -309,10 +303,10 @@ export class Tile {
             const line_relationships = this.line_relationships[this.selected_line_index];
             for (let i = 0; i < line_relationships.length; i++) {
                 const [relationship_line_index, relationship_settings_1, relationship_settings_2] = this.line_relationships[this.selected_line_index][i];
-
                 if (relationship_settings_2 === undefined) {
+                    const settings: Record<string, number> = this.configurations.get_settings(relationship_settings_1);
                     let relationship_point_index: number = this.selected_existing_point_index;
-                    if (relationship_settings_1['start_end'] === 1) {
+                    if (settings['start_end'] === 1) {
                         relationship_point_index = this.lines[relationship_line_index].points.length - this.selected_existing_point_index - 1;
                     }
 
@@ -1003,7 +997,7 @@ export class Tile {
                 for (let j = -offset; j < offset; j++) {
                     const scale: Vector2 = horizontal_vector.scale(i).add(vertical_vector.scale(j));
                     for (let k = 0; k < polygons.length; k++) {
-                        canvas_handler.draw_shape(colors[color_function(i, j, k)], this.translate_polygon(polygons[k], scale), true);
+                        canvas_handler.draw_shape(colors[color_function(i, j, k)], polygons[k], scale, true);
                     }
                 }
             }

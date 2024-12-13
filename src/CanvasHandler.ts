@@ -12,20 +12,15 @@ export class CanvasHandler {
     updated: boolean = false;
     pan: Vector2 = new Vector2(0, 0);
 
-    constructor(canvasId: string) {
-        this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    constructor(canvas_id: string) {
+        this.canvas = document.getElementById(canvas_id) as HTMLCanvasElement;
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', {alpha: false});
             if (this.ctx) {
                 this.ctx.font = '24px serif';
-
-                this.canvas.width = 1400;
-                this.canvas.height = 700;
-
-                this.canvas.style.width = `${1400}px`;
-                this.canvas.style.height = `${700}px`;
+                this.update_size();
             }
-            this.setupEventListeners();
+            this.setup_event_listeners();
         }
         else {
             this.ctx = null;
@@ -39,7 +34,21 @@ export class CanvasHandler {
         this.updated = false;
     }
 
-    setupEventListeners() {
+    get_center(): Vector2 {
+        if (this.canvas !== null) {
+            return new Vector2(Math.floor(this.canvas.width / 2), Math.floor(this.canvas.height / 2));
+        }
+        return new Vector2(0, 0);
+    }
+
+    get_width_height(): Vector2 {
+        if (this.canvas !== null) {
+            return new Vector2(this.canvas.width, this.canvas.height);
+        }
+        return new Vector2(0, 0);
+    }
+
+    setup_event_listeners() {
         if (this.canvas) {
             this.canvas.addEventListener('mousedown', (e) => {
                 if (e.button === 0) {
@@ -52,30 +61,30 @@ export class CanvasHandler {
                 else if (e.button === 2) {
                     this.mouse_right_clicked = true;
                 }
-                this.updateMousePosition(e);
+                this.update_mouse_position(e);
                 this.updated = true;
             });
 
             this.canvas.addEventListener('mousemove', (e) => {
-                this.updateMousePosition(e);
+                this.update_mouse_position(e);
                 this.updated = true;
             });
 
             this.canvas.addEventListener('mouseup', (e) => {
                 this.mouse_down = false;
-                this.updateMousePosition(e);
+                this.update_mouse_position(e);
                 this.updated = true;
             });
 
             this.canvas.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                this.updateMousePosition(e);
+                this.update_mouse_position(e);
                 this.updated = true;
             });
         }
     }
 
-    updateMousePosition(event: MouseEvent) {
+    update_mouse_position(event: MouseEvent) {
         if (this.mouse_pos === null) {
             this.prev_mouse_pos = null;
         }
@@ -88,19 +97,16 @@ export class CanvasHandler {
         }
     }
 
-    // Draw a line between two points
-    drawLine(p1: Vector2, p2: Vector2, color: string = 'black', width: number = 1) {
-        if (this.ctx) {
-            this.ctx.strokeStyle = color;
-            this.ctx.lineWidth = width;
-            this.ctx.beginPath();
-            this.ctx.moveTo(p1.x, p1.y);
-            this.ctx.lineTo(p2.x, p2.y);
-            this.ctx.stroke();
+    update_size() {
+        if (this.canvas !== null) {
+            this.canvas.width = window.innerWidth;
+            this.canvas.style.width = `${this.canvas.width}px`;
+
+            this.canvas.height = window.innerHeight;
+            this.canvas.style.height = `${this.canvas.height}px`;
         }
     }
 
-    // Draw a circle at a given position with radius
     draw_circle(x: number, y: number, radius: number, color: string = 'black') {
         if (this.ctx) {
             this.ctx.fillStyle = color;
@@ -116,14 +122,16 @@ export class CanvasHandler {
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); // Fill the canvas with white
         }
 	}
-	
-    draw_shape(color: string, points: Array<Vector2>, is_polygon: boolean) {
+
+    draw_shape(color: string, points: Array<Vector2>, scale: Vector2, is_polygon: boolean) {
         if (points.length < 2) {
             return;
         }
         
         if (this.ctx) {
             is_polygon ? this.ctx.fillStyle = color : this.ctx.strokeStyle = color;
+            this.ctx.save();
+            this.ctx.translate(scale.x, scale.y);
             this.ctx.beginPath();
             this.ctx.moveTo(points[0].x, points[0].y);
 
@@ -137,6 +145,8 @@ export class CanvasHandler {
             else {
                 this.ctx.stroke();
             }
+
+            this.ctx.restore();
         }
     }
 
